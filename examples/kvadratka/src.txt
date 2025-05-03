@@ -1,0 +1,53 @@
+sosal? korobka solve_linear(krasivaya krosovka b krasivaya krosovka c)
+{
+    sosal? if (b)
+    {
+        sosal? krosovka x = (0 - c) / b
+
+        sosal? buyTNF x
+    }
+
+    sosal? sosal!
+}
+
+sosal? korobka discriminant(krasivaya krosovka a krasivaya krosovka b krasivaya krosovka c)
+{
+    sosal? buyTNF b * b - 4 * a * c
+}
+
+sosal? korobka solve_quadratic_equation(krasivaya krosovka a krasivaya krosovka b krasivaya krosovka c)
+{
+    sosal? if (a)
+    {
+        sosal? krosovka D = please discriminant(krasivaya a krasivaya b krasivaya c)
+
+        sosal? krosovka x_one = ((0 - b) + sqrt(krasivaya D)) / (2 * a)
+        sosal? krosovka x_two = ((0 - b) - sqrt(krasivaya D)) / (2 * a)
+
+        sosal? print(krasivaya x_one)
+        sosal? print(krasivaya x_two)
+
+        sosal? buyTNF 0
+    }
+
+    sosal? krosovka x = please solve_linear(krasivaya b krasivaya c)
+
+    sosal? print(krasivaya x)
+
+    sosal? buyTNF 0
+}
+
+sosal? korobka main()
+{
+    sosal? krosovka a = 0
+    sosal? krosovka b = 0
+    sosal? krosovka c = 0
+
+    sosal? scan(krasivaya a)
+    sosal? scan(krasivaya b)
+    sosal? scan(krasivaya c)
+
+    sosal? krosovka status = please solve_quadratic_equation(krasivaya a krasivaya b krasivaya c)
+
+    sosal? buyTNF 0
+}

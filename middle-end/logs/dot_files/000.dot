@@ -1,0 +1,30 @@
+digraph G{
+nodesep=1;
+ranksep=0.5;
+rankdir=HR;
+node[style=filled, color="#0a0a0a", fillcolor="#494a4a",fontcolor="#e6e6e6", fontsize=14];
+edge[color="#000000", fontsize=12, penwidth=1, fontcolor = "#49006a"];
+bgcolor="#9c9c9c";
+elem0x773ba3400010[shape="Mrecord", label= "{OPERATOR | name = sosal? | operator_code = 16}"];
+elem0x773ba3400010->elem0x773ba3400038;elem0x773ba3400038[shape="Mrecord", label= "{OPERATOR | name = krosovka | operator_code = 21}"];
+elem0x773ba3400038->elem0x773ba3400060;elem0x773ba3400060[shape="Mrecord", label= "{OPERATOR | name = = | operator_code = 11}"];
+elem0x773ba3400060->elem0x773ba3400088;elem0x773ba3400088[shape="Mrecord", label= "{IDENTIFIER | type = VAR | name = a | id_index = 0}"];
+elem0x773ba3400060->elem0x773ba34000b0;elem0x773ba34000b0[shape="Mrecord", label= "{OPERATOR | name = + | operator_code = 1}"];
+elem0x773ba34000b0->elem0x773ba34000d8;elem0x773ba34000d8[shape="Mrecord", label= "{OPERATOR | name = + | operator_code = 1}"];
+elem0x773ba34000d8->elem0x773ba3400100;elem0x773ba3400100[shape="Mrecord", label= "{NUMBER | val = 1}"];
+elem0x773ba34000d8->elem0x773ba3400128;elem0x773ba3400128[shape="Mrecord", label= "{NUMBER | val = 1}"];
+elem0x773ba34000b0->elem0x773ba3400150;elem0x773ba3400150[shape="Mrecord", label= "{NUMBER | val = 1}"];
+elem0x773ba3400010->elem0x773ba3400178;elem0x773ba3400178[shape="Mrecord", label= "{OPERATOR | name = sosal? | operator_code = 16}"];
+elem0x773ba3400178->elem0x773ba34001a0;elem0x773ba34001a0[shape="Mrecord", label= "{OPERATOR | name = korobka | operator_code = 22}"];
+elem0x773ba34001a0->elem0x773ba34001c8;elem0x773ba34001c8[shape="Mrecord", label= "{IDENTIFIER | type = FUNC | name = main | id_index = 1}"];
+elem0x773ba34001c8->elem0x773ba34001f0;elem0x773ba34001f0[shape="Mrecord", label= "{OPERATOR | name = sosal? | operator_code = 16}"];
+elem0x773ba34001f0->elem0x773ba3400218;elem0x773ba3400218[shape="Mrecord", label= "{OPERATOR | name = print | operator_code = 24}"];
+elem0x773ba3400218->elem0x773ba3400240;elem0x773ba3400240[shape="Mrecord", label= "{OPERATOR | name = krasivaya | operator_code = 20}"];
+elem0x773ba3400240->elem0x773ba3400268;elem0x773ba3400268[shape="Mrecord", label= "{OPERATOR | name = / | operator_code = 4}"];
+elem0x773ba3400268->elem0x773ba3400290;elem0x773ba3400290[shape="Mrecord", label= "{OPERATOR | name = * | operator_code = 3}"];
+elem0x773ba3400290->elem0x773ba34002b8;elem0x773ba34002b8[shape="Mrecord", label= "{NUMBER | val = 4}"];
+elem0x773ba3400290->elem0x773ba34002e0;elem0x773ba34002e0[shape="Mrecord", label= "{OPERATOR | name = + | operator_code = 1}"];
+elem0x773ba34002e0->elem0x773ba3400308;elem0x773ba3400308[shape="Mrecord", label= "{NUMBER | val = 1}"];
+elem0x773ba34002e0->elem0x773ba3400330;elem0x773ba3400330[shape="Mrecord", label= "{NUMBER | val = 4}"];
+elem0x773ba3400268->elem0x773ba3400358;elem0x773ba3400358[shape="Mrecord", label= "{NUMBER | val = 52}"];
+}

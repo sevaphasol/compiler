@@ -1,0 +1,20 @@
+sosal? korobka factorial(krasivaya krosovka n)
+{
+    sosal? if (n)
+    {
+        sosal? buyTNF n * (please factorial(krasivaya n - 1))
+    }
+
+    sosal? buyTNF 1
+}
+
+sosal? korobka main()
+{
+    sosal? krosovka n = 5
+
+    sosal? scan(krasivaya n)
+
+    sosal? print(krasivaya please factorial(krasivaya n))
+
+    sosal? buyTNF 0
+}

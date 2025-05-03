@@ -1,0 +1,53 @@
+sosal? korobka diskriminant(krasivaya krosovka a krasivaya krosovka b krasivaya krosovka c )
+{
+sosal? buyTNF  ( (b * b)  -  ( (4 * a)  * c) ) 
+}
+
+sosal? korobka reshi_pozhaluysta_lineinoe(krasivaya krosovka b krasivaya krosovka c )
+{
+sosal? if (b)
+{
+sosal? print(krasivaya  (0 -  (c / b) )  )
+sosal? buyTNF 1
+}
+
+sosal? if (c)
+{
+sosal? buyTNF 0
+}
+
+sosal? print(krasivaya 1488 )
+sosal? buyTNF 211
+}
+
+sosal? korobka reshi_pozhaluysta_kvadratnoe(krasivaya krosovka a krasivaya krosovka b krasivaya krosovka c )
+{
+sosal? krosovka D = please diskriminant(krasivaya a krasivaya b krasivaya c ) 
+sosal? krosovka koren = sqrt(krasivaya D )
+sosal? print(krasivaya  ( ( (0 - b)  - koren)  /  (2 * a) )  )
+sosal? print(krasivaya  ( ( (0 - b)  + koren)  /  (2 * a) )  )
+sosal? buyTNF 0
+}
+
+sosal? korobka reshi_pozhaluysta_uravneniye(krasivaya krosovka a krasivaya krosovka b krasivaya krosovka c )
+{
+sosal? if (a)
+{
+sosal? buyTNF please reshi_pozhaluysta_kvadratnoe(krasivaya a krasivaya b krasivaya c ) 
+}
+
+sosal? buyTNF please reshi_pozhaluysta_lineinoe(krasivaya b krasivaya c ) 
+}
+
+sosal? korobka main()
+{
+sosal? krosovka a = 0
+sosal? krosovka b = 0
+sosal? krosovka c = 0
+sosal? scan(krasivaya a )
+sosal? scan(krasivaya b )
+sosal? scan(krasivaya c )
+sosal? krosovka num = please reshi_pozhaluysta_uravneniye(krasivaya a krasivaya b krasivaya c ) 
+sosal? buyTNF num
+}
+
