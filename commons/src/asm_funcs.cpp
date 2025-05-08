@@ -1,401 +1,556 @@
+#include <stack>
+
 #include "lang.h"
 #include "custom_assert.h"
+#include "ir.h"
 
 #define _DSL_DEFINE_
 #include "dsl.h"
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_node(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t compile(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    switch(cur_node->value_type)
-    {
-        case OPERATOR:
-        {
-            (*OperatorsTable[cur_node->value.operator_code].asm_func)(ctx, cur_node);
-            break;
-        }
-        case IDENTIFIER:
-        {
-            VERIFY(_ID(cur_node).type != VAR,
-                return LANG_ASM_NODE_ERROR);
+    // VERIFY(asm_globals(ctx),
+    //     return LANG_ASM_NODE_ERROR);
 
-            asm_var(ctx, cur_node);
-            break;
-        }
-        case NUMBER:
-        {
-            _PRINT("push %d\n", cur_node->value.number);
-            break;
-        }
-    }
+    ASM("section .text\n");
+    ASM("global _start\n\n");
 
-    //-------------------------------------------------------------------//
+    ASM("_start:\n");
+    ir_emit_label(ctx, "_start");
+
+    ctx->level = 1;
+
+    ASM("call _main\n");
+    ir_emit_call(ctx, "_main");
+
+    ASM("mov rax, 60\n");
+    ir_emit_mov(ctx, opd_reg(REG_RAX), opd_imm(60));
+
+    ASM("syscall\n");
+    ir_emit_syscall(ctx);
+
+    VERIFY(asm_node(ctx, ctx->tree),
+           return LANG_ASM_NODE_ERROR);
+
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_var(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_node(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    identifier_t var = ctx->name_table.ids[cur_node->value.id_index];
+    switch(node->value_type) {
+        case OPERATOR: {
+            (*_OP(node).asm_func)(ctx, node);
+            break;
+        }
+        case IDENTIFIER: {
+            asm_var(ctx, node);
+            break;
+        }
+        case NUMBER: {
+            ASM("push %ld\n", node->value.number);
+            ir_emit_push(ctx, opd_imm(node->value.number));
+            break;
+        }
+        default: {
+            return LANG_ERROR;
+        }
+    }
 
-    if (var.is_global)
-    {
-        _PRINT("push [%ld] "
-               ";pushing global var %s\n",
-                var.addr,
-                var.name);
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_var(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    identifier_t var = _ID(node);
+
+    //--------------------------------------------------------------------------
+
+    if (var.is_global) {
+        ASM("push %s\n", var.name)
         return LANG_SUCCESS;
     }
 
-    _PRINT("push [BP + %ld] "
-           ";pushing local var %s\n",
-            var.addr,
-            var.name)
+    //--------------------------------------------------------------------------
 
-    //-------------------------------------------------------------------//
+    if (var.addr < 0) {
+        ASM("push qword [rbp + %d] ; func param '%s'\n", -var.addr, var.name);
+    } else {
+        ASM("push qword [rbp - %d] ; local var '%s'\n",   var.addr, var.name);
+    }
+    ir_emit_push(ctx, opd_mem(var.addr));
+
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_call(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_passing_func_params(lang_ctx_t* ctx, node_t* node, size_t n_params)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    // _PRINT(";set BP\n");
-    _PRINT("push BP\n");
+    node_t* cur_param        = node;
+    node_t* params[n_params] = {};
 
-    // _PRINT(";pushing func_params: %d params\n", _ID(cur_node->left).n_params);
-    asm_node(ctx, cur_node->left->left);
+    //--------------------------------------------------------------------------
 
-    // _PRINT(";preparing to call function \"%s\"\n", _ID(cur_node->left).name);
-    _PRINT("push BP ;save BP\n");
-    _PRINT("push %d\n", _ID(cur_node->left).n_params);
-    _PRINT("add\n");
-    _PRINT("pop BP\n");
-
-    // _PRINT(";poping func_params to local variables\n");
-    for (size_t i = 0; i < _ID(cur_node->left).n_params; i++)
-    {
-        _PRINT("pop [BP + %ld]\n", _ID(cur_node->left).n_params - i - 1);
+    for (size_t i = 0; i < n_params; i++) {
+        ASSERT(cur_param);
+        params[i] = cur_param;
+        cur_param = cur_param->right;
     }
 
-    _PRINT("call %s:\n", _ID(cur_node->left).name);
-    _PRINT("pop  BP "
-           ";new BP\n");
-    _PRINT("push AX "
-           ";return value (in AX)\n");
+    //--------------------------------------------------------------------------
 
-    //-------------------------------------------------------------------//
+    for (size_t i = n_params; i != 0; i--) {
+        asm_var(ctx, params[i - 1]->left);
+    }
 
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_binary_operation(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-    ASSERT(cur_node->left);
-    ASSERT(cur_node->right);
-
-    //-------------------------------------------------------------------//
-
-    // _PRINT(";preparing args for binary operation %s\n",
-    //        OperatorsTable[cur_node->value.operator_code].asm_name);
-    asm_node(ctx, cur_node->left);
-    asm_node(ctx, cur_node->right);
-    _PRINT("%s\n", OperatorsTable[cur_node->value.operator_code].asm_name);
-
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_unary_operation(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_call(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    // _PRINT(";preparing args for unary operation %s\n",
-    //        OperatorsTable[cur_node->value.operator_code].asm_name);
-    asm_node(ctx, cur_node->left);
-    _PRINT("%s\n", OperatorsTable[cur_node->value.operator_code].asm_name);
+    node_t* call         = node;
+    node_t* func         = call->left;
+    node_t* func_params  = func->left;
 
-    //-------------------------------------------------------------------//
+    identifier_t func_id = ctx->name_table.ids[func->value.id_index];
+
+    //--------------------------------------------------------------------------
+
+    asm_passing_func_params(ctx, func_params, func_id.n_params);
+
+    ASM("call _%s\n", func_id.name);
+    ir_emit_call(ctx, func_id.name);
+
+    ASM("add rsp, %ld\n", 8L * func_id.n_params);
+    ir_emit_add(ctx, opd_reg(REG_RSP), opd_imm(8 * func_id.n_params));
+
+    ASM("push rax\n");
+    ir_emit_push(ctx, opd_reg(REG_RAX));
+
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_assignment(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_binary_operation(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    // _PRINT(";assignment\n");
-    asm_node(ctx, cur_node->right);
+    asm_node(ctx, node->left);
+    ASM("pop r10\n");
+    ir_emit_pop(ctx, opd_reg(REG_R10));
 
-    if (_ID(cur_node->left).is_global)
-    {
-        _PRINT("pop [%ld]\n", _ID(cur_node->left).addr);
+    asm_node(ctx, node->right);
+    ASM("pop r11\n");
+    ir_emit_pop(ctx, opd_reg(REG_R11));
+
+    ASM("%s r10, r11\n", OperatorsTable[node->value.operator_code].asm_name);
+
+    switch (node->value.operator_code) {
+        case ADD: {
+            ir_emit_add(ctx, opd_reg(REG_R10), opd_reg(REG_R11));
+            break;
+        }
+        case SUB: {
+            ir_emit_sub(ctx, opd_reg(REG_R10), opd_reg(REG_R11));
+            break;
+        }
+        case MUL: {
+            ir_emit_mul(ctx, opd_reg(REG_R10), opd_reg(REG_R11));
+            break;
+        }
+        case DIV: {
+            ir_emit_div(ctx, opd_reg(REG_R10), opd_reg(REG_R11));
+            break;
+        }
+        default: {
+            return LANG_ERROR;
+        }
+    }
+
+    ASM("push r10\n");
+    ir_emit_push(ctx, opd_reg(REG_R10));
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_assignment(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    identifier_t var = _ID(node->left);
+
+    //--------------------------------------------------------------------------
+
+    asm_node(ctx, node->right);
+
+    //--------------------------------------------------------------------------
+
+    if (var.is_global) {
+        ASM("pop %s\n", var.name);
         return LANG_SUCCESS;
     }
 
-    _PRINT("pop [BP + %ld] ;assignment of %s\n",
-           _ID(cur_node->left).addr,
-           _ID(cur_node->left).name);
+    //--------------------------------------------------------------------------
 
-    //-------------------------------------------------------------------//
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_sequential_action(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-
-    //-------------------------------------------------------------------//
-
-    // size_t old_n_locals = ctx->n_locals;
-    if (cur_node->left)  asm_node(ctx, cur_node->left);
-
-    // if (OperatorsTable[cur_node->value.operator_code].code == STATEMENT)
-    // {
-    //     ctx->n_locals = old_n_locals;
-    // }
-
-    if (cur_node->right) asm_node(ctx, cur_node->right);
-
-    //-------------------------------------------------------------------//
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_if(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-
-    //-------------------------------------------------------------------//
-
-    // _PRINT(";pushing if params\n");
-    asm_node(ctx, cur_node->left);
-
-    _PRINT("push 0\n");
-    _PRINT("je else_body_%ld:\n", ctx->n_labels);
-
-    ctx->level++;
-    // _PRINT(";if body\n");
-    asm_node(ctx, cur_node->right);
-    ctx->level--;
-
-    _PRINT("else_body_%ld:\n", ctx->n_labels++);
-    ctx->level++;
-
-    //-------------------------------------------------------------------//
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_while(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-
-    //-------------------------------------------------------------------//
-
-    // _PRINT("pushing while params\n");
-
-    _PRINT("start_of_while_%ld:\n", ctx->n_labels);
-
-    asm_node(ctx, cur_node->left);
-    _PRINT("push 0\n");
-    _PRINT("je end_of_while_%ld:\n", ctx->n_labels);
-
-    ctx->level++;
-    asm_node(ctx, cur_node->right);
-    ctx->level--;
-
-    _PRINT("jmp start_of_while_%ld:\n", ctx->n_labels);
-    _PRINT("end_of_while_%ld:\n", ctx->n_labels);
-
-    //-------------------------------------------------------------------//
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_new_var(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-
-    static int n_calls = 0;
-    n_calls++;
-
-    //-------------------------------------------------------------------//
-
-    node_t* var = nullptr;
-
-    if (_NODE_IS_OPERATOR(cur_node->left, ASSIGNMENT))
-    {
-        var = cur_node->left->left;
+    if (var.addr < 0) {
+        ASM("pop qword [rbp + %d] ; assign func param '%s'\n", -var.addr, var.name);
+    } else {
+        ASM("pop qword [rbp - %d] ; assign local var '%s'\n",   var.addr, var.name);
     }
-    else if (_NODE_IS_ID_TYPE(cur_node->left, VAR))
-    {
-        var = cur_node->left;
-    }
-    else
-    {
-        fprintf(stderr, "DEBUG in %s:%d:%s\n",
-                        __FILE__, __LINE__, __PRETTY_FUNCTION__);
+    ir_emit_pop(ctx, opd_imm(var.addr));
 
-        return LANG_ASM_NEW_VAR_ERROR;
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_statement(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    if (node->left) {
+        asm_node(ctx, node->left);
     }
 
-    // _PRINT(";allocating static memory for variable \"%s\"\n",
-    //         _ID(var).name);
-
-    //-------------------------------------------------------------------//
-
-    if (_ID(var).is_global) { _ID(var).addr = ctx->n_globals++; }
-    else                    { _ID(var).addr = ctx->n_locals++;  }
-
-    //-------------------------------------------------------------------//
-
-    if (_NODE_IS_OPERATOR(cur_node->left, ASSIGNMENT))
-    {
-        asm_assignment(ctx, cur_node->left);
+    if (node->right) {
+        asm_node(ctx, node->right);
     }
+
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_new_func(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_new_var(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    ctx->level = 0;
+    node_t*       assignment  = node->left;
+    node_t*       var         = assignment->left;
+    identifier_t* var_id      = &_ID(var);
 
-    size_t old_n_locals = ctx->n_locals;
+    //--------------------------------------------------------------------------
+
+    if (!var_id->addr) {
+        var_id->addr = VAR_SIZE * (++ctx->n_locals);
+    }
+
+    //--------------------------------------------------------------------------
+
+    asm_assignment(ctx, assignment);
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_receiving_func_params(lang_ctx_t* ctx, node_t* node, size_t n_params)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    node_t* cur_param = node;
+
+    for (size_t i = 0; i < n_params; i++) {
+        _ID(cur_param->left->left).addr = -VAR_SIZE * (i + 2);
+        cur_param = cur_param->right;
+    }
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_new_func(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    node_t*      func_declaration = node;
+    node_t*      func             = func_declaration->left;
+    node_t*      func_params      = func->left;
+    node_t*      func_body        = func->right;
+    identifier_t func_id          = _ID(func);
+
+    //--------------------------------------------------------------------------
+
+    ASM_NO_TAB("_%s:\n", func_id.name);
+    ir_emit_label(ctx, func_id.name);
+
+    ctx->level = 1;
+
+    ASM("push rbp\n");
+    ir_emit_push(ctx, opd_reg(REG_RBP));
+    ASM("mov rbp, rsp\n");
+    ir_emit_mov(ctx, opd_reg(REG_RBP), opd_reg(REG_RSP));
+
+    //--------------------------------------------------------------------------
+
+    ASM("sub rsp,   \n");
+    size_t allocated_size_file_pos = ftell(ctx->output_file) - 3;
+    size_t allocated_size_pos = ctx->ir_ctx->buffer_size;
+    ctx->ir_ctx->buffer_size++;
+
+    //--------------------------------------------------------------------------
+
+    if (func_params) {
+        asm_receiving_func_params(ctx, func_params, func_id.n_params);
+    }
+
+    asm_node(ctx, func_body);
+
+    //--------------------------------------------------------------------------
+
+    size_t cur_file_pos = ftell(ctx->output_file);
+    fseek(ctx->output_file, allocated_size_file_pos, SEEK_SET);
+
+    ASM_NO_TAB("%ld", VAR_SIZE * ctx->n_locals);
+
+    fseek(ctx->output_file, cur_file_pos, SEEK_SET);
+
+    size_t cur_pos = ctx->ir_ctx->buffer_size;
+    ctx->ir_ctx->buffer_size = allocated_size_pos;
+    ir_emit_sub(ctx, opd_reg(REG_RSP), opd_imm(VAR_SIZE * ctx->n_locals));
+    ctx->ir_ctx->buffer_size = cur_pos;
+
+    //--------------------------------------------------------------------------
+
     ctx->n_locals = 0;
+    ctx->level    = 0;
 
-    // _PRINT("\n;//=========== declaration of function %s ===========//\n\n",
-    //        _ID(cur_node->left).name);
-    _PRINT("%s:\n", _ID(cur_node->left).name);
-
-    if (cur_node->left->left) asm_node(ctx, cur_node->left->left);
-    ctx->level++;
-    asm_node(ctx, cur_node->left->right);
-    ctx->level--;
-
-    ctx->n_locals = old_n_locals;
-
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_return(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_return(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
+    ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    if (cur_node->left) asm_node(ctx, cur_node->left);
-    _PRINT("pop AX ;pop in AX return value\n");
-    _PRINT("ret\n");
+    node_t* ret       = node;
+    node_t* ret_value = ret->left;
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_in(lang_ctx_t* ctx, node_t* cur_node)
-{
-    ASSERT(ctx);
-    ASSERT(cur_node);
-
-    //-------------------------------------------------------------------//
-
-    _PRINT("in\n");
-
-    if (_ID(cur_node->left->left).is_global)
-    {
-        _PRINT("pop [%ld]\n", _ID(cur_node->left->left).addr);
-        return LANG_SUCCESS;
+    if (ret_value) {
+        asm_node(ctx, ret_value);
+        ASM("pop rax\n");
+        ir_emit_pop(ctx, opd_reg(REG_RAX));
     }
 
-    _PRINT("pop [BP + %ld]\n", _ID(cur_node->left->left).addr);
+    ASM("add rsp, %ld\n", VAR_SIZE * ctx->n_locals);
+    ir_emit_add(ctx, opd_reg(REG_RSP), opd_imm(VAR_SIZE * ctx->n_locals));
 
-    //-------------------------------------------------------------------//
+    ASM("pop rbp\n");
+    ir_emit_pop(ctx, opd_reg(RBP));
+
+    ASM("ret\n");
+    ir_emit_ret(ctx);
+
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
-lang_status_t asm_hlt(lang_ctx_t* ctx, node_t* cur_node)
+lang_status_t asm_unary_operation(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
-    ASSERT(cur_node);
-
-    //-------------------------------------------------------------------//
-
-    _PRINT("hlt\n\n");
-
-    //-------------------------------------------------------------------//
+    ASSERT(node);
 
     return LANG_SUCCESS;
 }
 
-//———————————————————————————————————————————————————————————————————//
+//==============================================================================
+
+lang_status_t asm_if(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    node_t* statement = node->left;
+    node_t* body      = node->right;
+
+    //--------------------------------------------------------------------------
+
+    asm_node(ctx, statement);
+
+    ASM("pop rax\n");
+    ir_emit_pop(ctx, opd_reg(REG_RAX));
+    ASM("test rax, rax\n");
+    ir_emit_test(ctx, opd_reg(REG_RAX));
+
+    size_t label_num = ctx->n_labels;
+
+    char label[5] = {};
+    snprintf(label, 5, ".L%ld", ctx->n_labels++);
+
+    ASM("je .if_done%ld\n", label_num);
+    ir_emit_je(ctx, label);
+    asm_node(ctx, body);
+    ASM_NO_TAB(".if_done%ld:\n", label_num);
+    ir_emit_label(ctx, label);
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_while(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    node_t* statement = node->left;
+    node_t* body      = node->right;
+
+    //--------------------------------------------------------------------------
+
+    size_t check_label_num = ctx->n_labels;
+    ASM("jmp .check_while_condition%ld\n", check_label_num);
+
+    char label[5] = {};
+    snprintf(label, 5, ".L%ld", ctx->n_labels++);
+
+    ir_emit_jmp();
+
+    size_t body_label_num = ctx->n_labels++;
+    ASM(".body_while%ld:\n", body_label_num);
+    asm_node(ctx, body);
+
+    ASM(".check_while_condition%ld:\n", check_label_num);
+    asm_node(ctx, statement);
+    ASM("pop rax\n");
+    ASM("test rax, rax\n");
+    ASM("jne .body_while%ld\n", body_label_num);
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_globals(lang_ctx_t* ctx)
+{
+    ASSERT(ctx);
+
+    //--------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_in(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t asm_hlt(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    ASM("mov rax, 60\n")
+    ASM("syscall\n");
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
 
 #define _DSL_UNDEF_
 #include "dsl.h"
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————

@@ -152,30 +152,21 @@ lang_status_t print_node_value(FILE* fp, node_t* node)
 
     //---------------------------------------------------------------//
 
-    switch (node->value_type)
-    {
-        case OPERATOR:
-        {
+    switch (node->value_type) {
+        case OPERATOR: {
             fprintf(fp, "%d ", node->value.operator_code);
-
             break;
         }
-        case IDENTIFIER:
-        {
+        case IDENTIFIER: {
             fprintf(fp, "%ld ", node->value.id_index);
-
             break;
         }
-        case NUMBER:
-        {
+        case NUMBER: {
             fprintf(fp, "%d ", node->value.number);
-
             break;
         }
-        default:
-        {
+        default: {
             return LANG_PRINT_NODE_VALUE_ERROR;
-
             break;
         }
     }

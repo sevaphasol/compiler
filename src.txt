@@ -1,0 +1,14 @@
+~ func add(: var minion : var papoi)
+{
+    ~ return minion + papoi
+}
+
+~ func main()
+{
+    ~ var minion = 1
+    ~ var papoi = 2
+
+    ~ var sum = call add(: minion : papoi)
+
+    ~ return 0
+}

@@ -4,6 +4,7 @@
 //———————————————————————————————————————————————————————————————————//
 
 #include <stdio.h>
+#include <inttypes.h>
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -107,7 +108,7 @@ enum lang_status_t
 
 //———————————————————————————————————————————————————————————————————//
 
-enum value_type_t
+enum    value_type_t
 {
     POISON     = 0,
     OPERATOR   = 1,
@@ -168,7 +169,7 @@ struct operator_t
 
 lang_status_t asm_binary_operation  (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_assignment        (lang_ctx_t* ctx, node_t* cur_node);
-lang_status_t asm_sequential_action (lang_ctx_t* ctx, node_t* cur_node);
+lang_status_t asm_statement         (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_if                (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_while             (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_new_var           (lang_ctx_t* ctx, node_t* cur_node);
@@ -180,6 +181,8 @@ lang_status_t asm_call              (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_hlt               (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_var               (lang_ctx_t* ctx, node_t* cur_node);
 lang_status_t asm_node              (lang_ctx_t* ctx, node_t* cur_node);
+lang_status_t asm_globals           (lang_ctx_t* ctx);
+lang_status_t compile               (lang_ctx_t* ctx);
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -208,8 +211,8 @@ const operator_t OperatorsTable[] =
     {SUB,           STR_AND_LEN("-"),         "sub",         2,          &asm_binary_operation , &src_binary_op,    },
     {MUL,           STR_AND_LEN("*"),         "mul",         2,          &asm_binary_operation , &src_binary_op,    },
     {DIV,           STR_AND_LEN("/"),         "div",         2,          &asm_binary_operation , &src_binary_op,    },
-    {COS,           STR_AND_LEN("cosipinus"), "cos",         1,          &asm_unary_operation  , &src_unary_op,     },
-    {SIN,           STR_AND_LEN("sipinus"),   "sin",         1,          &asm_unary_operation  , &src_unary_op,     },
+    {COS,           STR_AND_LEN("cos"),       "cos",         1,          &asm_unary_operation  , &src_unary_op,     },
+    {SIN,           STR_AND_LEN("sin"),       "sin",         1,          &asm_unary_operation  , &src_unary_op,     },
     {SQRT,          STR_AND_LEN("sqrt"),      "sqrt",        1,          &asm_unary_operation  , &src_unary_op,     },
     {POW,           STR_AND_LEN("^"),         "pow",         1,          &asm_unary_operation  , &src_binary_op,    },
     {BIGGER,        STR_AND_LEN(">"),         nullptr,       2,          &asm_assignment       , &src_binary_op,    },
@@ -219,17 +222,17 @@ const operator_t OperatorsTable[] =
     {CLOSE_BRACKET, STR_AND_LEN(")"),         nullptr,       1,          nullptr               , nullptr,           },
     {BODY_START,    STR_AND_LEN("{"),         nullptr,       1,          nullptr               , nullptr,           },
     {BODY_END,      STR_AND_LEN("}"),         nullptr,       1,          nullptr               , nullptr,           },
-    {STATEMENT,     STR_AND_LEN("sosal?"),    nullptr,       2,          &asm_sequential_action, &src_statement,    },
+    {STATEMENT,     STR_AND_LEN("~"),         nullptr,       2,          &asm_statement,         &src_statement,    },
     {IF,            STR_AND_LEN("if"),        nullptr,       2,          &asm_if               , &src_cond,         },
     {WHILE,         STR_AND_LEN("while"),     nullptr,       2,          &asm_while            , &src_cond,         },
-    {RET,           STR_AND_LEN("buyTNF"),    nullptr,       0,          &asm_return           , &src_ret,          },
-    {PARAM_LINKER,  STR_AND_LEN("krasivaya"), nullptr,       2,          &asm_sequential_action, &src_param_linker, },
-    {NEW_VAR,       STR_AND_LEN("krosovka"),  nullptr,       2,          &asm_new_var          , &src_new_var,      },
-    {NEW_FUNC,      STR_AND_LEN("korobka"),   nullptr,       2,          &asm_new_func         , &src_new_func,     },
+    {RET,           STR_AND_LEN("return"),    nullptr,       0,          &asm_return           , &src_ret,          },
+    {PARAM_LINKER,  STR_AND_LEN(":"),         nullptr,       2,          nullptr,                &src_param_linker, },
+    {NEW_VAR,       STR_AND_LEN("var"),       nullptr,       2,          &asm_new_var          , &src_new_var,      },
+    {NEW_FUNC,      STR_AND_LEN("func"),      nullptr,       2,          &asm_new_func         , &src_new_func,     },
     {IN,            STR_AND_LEN("scan"),      "in",          1,          &asm_in               , &src_in,           },
     {OUT,           STR_AND_LEN("print"),     "out",         1,          &asm_unary_operation  , &src_out,          },
-    {CALL,          STR_AND_LEN("please"),    "call",        0,          &asm_call             , &src_call,         },
-    {HLT,           STR_AND_LEN("sosal!"),    nullptr,       0,          &asm_hlt              , &src_hlt,          }
+    {CALL,          STR_AND_LEN("call"),      "call",        0,          &asm_call             , &src_call,         },
+    {HLT,           STR_AND_LEN("exit"),      nullptr,       0,          &asm_hlt              , &src_hlt,          }
 };
 
 #undef STR_AND_LEN
@@ -254,7 +257,7 @@ struct identifier_t
     size_t            len;
     int               n_params;
     bool              is_inited;
-    size_t            addr;
+    int               addr;
     bool              is_global;
 };
 
@@ -268,7 +271,7 @@ struct name_t
 
 //———————————————————————————————————————————————————————————————————//
 
-typedef int number_t;
+typedef uint64_t number_t;
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -315,6 +318,8 @@ struct node_allocator_t;
 
 //———————————————————————————————————————————————————————————————————//
 
+struct ir_ctx_t;
+
 struct lang_ctx_t
 {
     FILE*             input_file;
@@ -339,6 +344,8 @@ struct lang_ctx_t
     size_t            n_labels;
     size_t            n_globals;
     size_t            n_locals;
+
+    ir_ctx_t*         ir_ctx;
 };
 
 //———————————————————————————————————————————————————————————————————//

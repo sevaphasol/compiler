@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -g -I include -Wcast-qual -Wconversion -Wctor-dtor-privacy					 \
 		 -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers -Wlogical-op \
          -Wno-missing-field-initializers -Wnon-virtual-dtor -Woverloaded-virtual     \
-		 -Wpointer-arith -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing           \
+		 -Wpointer-arith -Wsign-promo -Wstrict-aliasing           \
 		 -Wstrict-null-sentinel -Wtype-limits -Wwrite-strings -fexceptions -pipe     \
 
 LDFLAGS =

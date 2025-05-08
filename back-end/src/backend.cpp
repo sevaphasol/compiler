@@ -8,6 +8,7 @@
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "io_interaction.h"
+#include "ir.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -20,8 +21,6 @@ static lang_status_t read_tree_from_file(lang_ctx_t* ctx, node_t** node);
 static lang_status_t read_tree(lang_ctx_t* ctx, node_t** node);
 static lang_status_t put_node_value(int type, int val, value_t* node_value);
 static lang_status_t read_name_table(lang_ctx_t* ctx);
-static lang_status_t asm_code(lang_ctx_t* ctx);
-static lang_status_t asm_globals(lang_ctx_t* ctx);
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -34,11 +33,7 @@ int main(int argc, const char* argv[])
 
     //-------------------------------------------------------------------//
 
-    VERIFY(lang_ctx_ctor(&ctx,
-                         argc,
-                         argv,
-                         BackendDefaultInput,
-                         BackendDefaultOutput),
+    VERIFY(lang_ctx_ctor(&ctx, argc, argv, BackendDefaultInput, BackendDefaultOutput),
            return EXIT_FAILURE);
 
     //-------------------------------------------------------------------//
@@ -61,9 +56,18 @@ int main(int argc, const char* argv[])
 
     //-------------------------------------------------------------------//
 
-    VERIFY(asm_code(&ctx),
+    ir_ctx_t ir_ctx = {};
+    ctx.ir_ctx = &ir_ctx;
+
+    ir_ctx_ctor(&ir_ctx, IR_BUFFER_INIT_CAPACITY);
+
+    //--------------------------------------------------------------------------
+
+    VERIFY(compile(&ctx),
            lang_ctx_dtor(&ctx);
            return EXIT_FAILURE);
+
+    ir_ctx_dtor(&ir_ctx);
 
     //-------------------------------------------------------------------//
 
@@ -74,63 +78,15 @@ int main(int argc, const char* argv[])
     return EXIT_SUCCESS;
 }
 
-//===================================================================//
-
-lang_status_t asm_code(lang_ctx_t* ctx)
-{
-    ASSERT(ctx);
-
-    //-------------------------------------------------------------------//
-
-    VERIFY(asm_globals(ctx),
-        return LANG_ASM_NODE_ERROR);
-
-    _PRINT("push %ld\n", ctx->n_globals);
-    _PRINT("pop BP\n");
-    _PRINT("call main:\n");
-    _PRINT("hlt\n");
-
-    VERIFY(asm_node(ctx, ctx->tree),
-           return LANG_ASM_NODE_ERROR);
-
-    //-------------------------------------------------------------------//
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
-
-lang_status_t asm_globals(lang_ctx_t* ctx)
-{
-    ASSERT(ctx);
-
-    node_t* cur_node = ctx->tree;
-
-    while (cur_node && _NODE_IS_OPERATOR(cur_node, STATEMENT)
-                    && _NODE_IS_OPERATOR(cur_node->left, NEW_VAR))
-    {
-        VERIFY(asm_new_var(ctx, cur_node->left),
-               return LANG_ASM_NODE_ERROR);
-
-        cur_node = cur_node->right;
-    }
-
-    ctx->tree = cur_node;
-
-    return LANG_SUCCESS;
-}
-
-//===================================================================//
+//==============================================================================
 
 lang_status_t read_name_table(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     int n_chars = 0;
-
-    //-------------------------------------------------------------------//
 
     size_t n_ids = 0;
     sscanf(ctx->code, "%ld%n", &n_ids, &n_chars);
@@ -148,8 +104,7 @@ lang_status_t read_name_table(lang_ctx_t* ctx)
     int is_global;
     int nchars = 0;
 
-    for (int i = 0; i < n_ids; i++)
-    {
+    for (int i = 0; i < n_ids; i++) {
         sscanf(ctx->code, " { %d %s %d %d %d } %n",
                           &len,
                           buf,
@@ -169,34 +124,34 @@ lang_status_t read_name_table(lang_ctx_t* ctx)
     sscanf(ctx->code, " %ld%n", &ctx->n_nodes, &nchars);
     ctx->code += nchars;
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
 lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
 {
     ASSERT(ctx);
     ASSERT(node);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    while (isspace(*ctx->code)) {ctx->code++;}
-
-    //-------------------------------------------------------------------//
-
-    if (*ctx->code == '_')
-    {
+    while (isspace(*ctx->code)) {
         ctx->code++;
+    }
 
+    //--------------------------------------------------------------------------
+
+    if (*ctx->code == '_') {
+        ctx->code++;
         *node = nullptr;
 
         return LANG_SUCCESS;
     }
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     int nchars = 0;
     int type   = 0;
@@ -204,14 +159,14 @@ lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
 
     sscanf(ctx->code, "%*[^0-9] %d %d%n", &type, &val, &nchars);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     value_t node_value = {};
 
     VERIFY(put_node_value(type, val ,&node_value),
            return LANG_PUT_NODE_VALUE_ERROR);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     *node = node_ctor(ctx->node_allocator,
                       (value_type_t) type,
@@ -220,7 +175,7 @@ lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
                       nullptr,
                       nullptr);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     ctx->code += nchars;
 
@@ -230,7 +185,7 @@ lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
     VERIFY(read_tree(ctx, &(*node)->right),
            return LANG_READ_RIGHT_NODE_ERROR);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     while (isspace(*ctx->code)) {ctx->code++;}
 
@@ -239,50 +194,45 @@ lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
 
     ctx->code++;
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
 lang_status_t put_node_value(int type, int val, value_t* node_value)
 {
     ASSERT(node_value);
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
-    switch(type)
-    {
-        case OPERATOR:
-        {
+    switch(type) {
+        case OPERATOR: {
             node_value->operator_code = (operator_code_t) val;
             break;
         }
-        case IDENTIFIER:
-        {
+        case IDENTIFIER: {
             node_value->id_index = val;
             break;
         }
-        case NUMBER:
-        {
+        case NUMBER: {
             node_value->number = (number_t) val;
             break;
         }
-        default:
-        {
+        default: {
             fprintf(stderr, "Unknown type: %d\n", type);
 
             return LANG_UNKNOWN_TYPE_ERROR;
         }
     }
 
-    //-------------------------------------------------------------------//
+    //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
 }
 
-//===================================================================//
+//==============================================================================
 
 #define _DSL_UNDEF_
 #include "dsl.h"
