@@ -167,30 +167,37 @@ lang_status_t ir_emit_syscall(lang_ctx_t* ctx)
 
 //==============================================================================
 
-lang_status_t ir_emit_label(lang_ctx_t* ctx, const char* name)
+lang_status_t ir_emit_func(lang_ctx_t* ctx, const char* name)
 {
     return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_LABEL, opd_lbl(name), {}});
 }
 
 //==============================================================================
 
-lang_status_t ir_emit_jmp(lang_ctx_t* ctx, const char* name)
+lang_status_t ir_emit_label(lang_ctx_t* ctx, int64_t label_number)
 {
-    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JMP, opd_lbl(name), {}});
+    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_LABEL, opd_imm(label_number), {}});
 }
 
 //==============================================================================
 
-lang_status_t ir_emit_je(lang_ctx_t* ctx, const char* name)
+lang_status_t ir_emit_jmp(lang_ctx_t* ctx, int64_t label_number)
 {
-    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JE, opd_lbl(name), {}});
+    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JMP, opd_imm(label_number), {}});
 }
 
 //==============================================================================
 
-lang_status_t ir_emit_jne(lang_ctx_t* ctx, const char* name)
+lang_status_t ir_emit_je(lang_ctx_t* ctx, int64_t label_number)
 {
-    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JNE, opd_lbl(name), {}});
+    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JE, opd_imm(label_number), {}});
+}
+
+//==============================================================================
+
+lang_status_t ir_emit_jne(lang_ctx_t* ctx, int64_t label_number)
+{
+    return ir_emit(ctx->ir_ctx, (ir_instr_t) {OP_JNE, opd_imm(label_number), {}});
 }
 
 //==============================================================================

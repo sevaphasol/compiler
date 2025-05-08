@@ -8,6 +8,7 @@
 #include <stdarg.h>
 
 #include "lang.h"
+#include "ir.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -50,6 +51,9 @@ const char* const EdgeFontColor       = "#49006a";
 tree_dump_status_t graph_dump (lang_ctx_t* ctx,
                                node_t*     node,
                                dump_mode_t mode);
+
+tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx,
+                                        ir_instr_t* buffer);
 
 //———————————————————————————————————————————————————————————————————//
 

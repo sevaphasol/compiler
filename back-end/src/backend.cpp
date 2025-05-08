@@ -67,6 +67,8 @@ int main(int argc, const char* argv[])
            lang_ctx_dtor(&ctx);
            return EXIT_FAILURE);
 
+    ir_buffer_graph_dump(&ctx, ctx.ir_ctx->buffer);
+
     ir_ctx_dtor(&ir_ctx);
 
     //-------------------------------------------------------------------//

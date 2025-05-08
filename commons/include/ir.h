@@ -111,10 +111,11 @@ lang_status_t ir_emit_push(lang_ctx_t* ctx, operand_t opd);
 lang_status_t ir_emit_pop(lang_ctx_t* ctx, operand_t opd);
 lang_status_t ir_emit_call(lang_ctx_t* ctx, const char* name);
 lang_status_t ir_emit_ret(lang_ctx_t* ctx);
-lang_status_t ir_emit_label(lang_ctx_t* ctx, const char* name);
-lang_status_t ir_emit_jmp(lang_ctx_t* ctx, const char* name);
-lang_status_t ir_emit_je(lang_ctx_t* ctx, const char* name);
-lang_status_t ir_emit_jne(lang_ctx_t* ctx, const char* name);
+lang_status_t ir_emit_func(lang_ctx_t* ctx, const char* name);
+lang_status_t ir_emit_label(lang_ctx_t* ctx, int64_t label_number);
+lang_status_t ir_emit_jmp(lang_ctx_t* ctx, int64_t label_number);
+lang_status_t ir_emit_je(lang_ctx_t* ctx, int64_t label_number);
+lang_status_t ir_emit_jne(lang_ctx_t* ctx, int64_t label_number);
 lang_status_t ir_emit_syscall(lang_ctx_t* ctx);
 lang_status_t ir_emit_test(lang_ctx_t* ctx, operand_t opd);
 

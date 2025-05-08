@@ -22,7 +22,7 @@ lang_status_t compile(lang_ctx_t* ctx)
     ASM("global _start\n\n");
 
     ASM("_start:\n");
-    ir_emit_label(ctx, "_start");
+    ir_emit_func(ctx, "_start");
 
     ctx->level = 1;
 
@@ -346,7 +346,7 @@ lang_status_t asm_new_func(lang_ctx_t* ctx, node_t* node)
     //--------------------------------------------------------------------------
 
     ASM_NO_TAB("_%s:\n", func_id.name);
-    ir_emit_label(ctx, func_id.name);
+    ir_emit_func(ctx, func_id.name);
 
     ctx->level = 1;
 
@@ -418,7 +418,7 @@ lang_status_t asm_return(lang_ctx_t* ctx, node_t* node)
     ir_emit_add(ctx, opd_reg(REG_RSP), opd_imm(VAR_SIZE * ctx->n_locals));
 
     ASM("pop rbp\n");
-    ir_emit_pop(ctx, opd_reg(RBP));
+    ir_emit_pop(ctx, opd_reg(REG_RBP));
 
     ASM("ret\n");
     ir_emit_ret(ctx);
@@ -459,16 +459,13 @@ lang_status_t asm_if(lang_ctx_t* ctx, node_t* node)
     ASM("test rax, rax\n");
     ir_emit_test(ctx, opd_reg(REG_RAX));
 
-    size_t label_num = ctx->n_labels;
-
-    char label[5] = {};
-    snprintf(label, 5, ".L%ld", ctx->n_labels++);
+    size_t label_num = ctx->n_labels++;
 
     ASM("je .if_done%ld\n", label_num);
-    ir_emit_je(ctx, label);
+    ir_emit_je(ctx, label_num);
     asm_node(ctx, body);
     ASM_NO_TAB(".if_done%ld:\n", label_num);
-    ir_emit_label(ctx, label);
+    ir_emit_label(ctx, label_num);
 
     //--------------------------------------------------------------------------
 
@@ -491,21 +488,23 @@ lang_status_t asm_while(lang_ctx_t* ctx, node_t* node)
 
     size_t check_label_num = ctx->n_labels;
     ASM("jmp .check_while_condition%ld\n", check_label_num);
-
-    char label[5] = {};
-    snprintf(label, 5, ".L%ld", ctx->n_labels++);
-
-    ir_emit_jmp();
+    ir_emit_jmp(ctx, check_label_num);
 
     size_t body_label_num = ctx->n_labels++;
     ASM(".body_while%ld:\n", body_label_num);
+    ir_emit_label(ctx, body_label_num);
     asm_node(ctx, body);
 
     ASM(".check_while_condition%ld:\n", check_label_num);
+    ir_emit_label(ctx, check_label_num);
     asm_node(ctx, statement);
+
     ASM("pop rax\n");
+    ir_emit_pop(ctx, opd_reg(REG_RAX));
     ASM("test rax, rax\n");
+    ir_emit_test(ctx, opd_reg(REG_RAX));
     ASM("jne .body_while%ld\n", body_label_num);
+    ir_emit_jne(ctx, body_label_num);
 
     //--------------------------------------------------------------------------
 
