@@ -31,7 +31,7 @@ lang_status_t src_node(lang_ctx_t* ctx, node_t* node)
     {
         case NUMBER:
         {
-            _PUT("%d", node->value.number);
+            _PUT("%ld", node->value.number);
             break;
         }
 

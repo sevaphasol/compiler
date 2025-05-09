@@ -63,7 +63,7 @@ int main(int argc, const char* argv[])
 
     //--------------------------------------------------------------------------
 
-    VERIFY(compile(&ctx),
+    VERIFY(build_IR(&ctx),
            lang_ctx_dtor(&ctx);
            return EXIT_FAILURE);
 

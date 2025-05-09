@@ -45,22 +45,22 @@ void make_node(FILE* file, void* elem_ptr, const char* name, int val)
 void make_dot_opd(FILE* file, operand_t* opd)
 {
     switch(opd->type) {
-        case OPD_NAN: {
+        case IR_OPERAND_NAN: {
             return;
         }
-        case OPD_REG: {
+        case IR_OPERAND_REGISTER: {
             make_node(file, opd, "REGISTER", opd->value.reg);
             break;
         }
-        case OPD_MEM: {
+        case IR_OPERAND_MEMORY: {
             make_node(file, opd, "MEMORY", opd->value.addr);
             break;
         }
-        case OPD_IMM: {
+        case IR_OPERAND_IMMERSIVE: {
             make_node(file, opd, "IMMERSIVE", opd->value.imm);
             break;
         }
-        case OPD_LBL: {
+        case IR_OPERAND_LABEL: {
             make_node(file, opd, "LABEL", opd->value.imm);
             break;
         }
@@ -236,7 +236,7 @@ tree_dump_status_t make_elem(lang_ctx_t* ctx, node_t* node, FILE* file)
         {
             fprintf(file, "elem%p["
                           "shape=\"Mrecord\", "
-                          "label= \"{%s | val = %d}\""
+                          "label= \"{%s | val = %ld}\""
                           "];\n",
                           node,
                           "NUMBER",

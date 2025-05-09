@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -g -I include -Wcast-qual -Wconversion -Wctor-dtor-privacy					 \
+CFLAGS = -g -I include -Wcast-qual -Wctor-dtor-privacy					 \
 		 -Wempty-body -Wformat-security -Wformat=2 -Wignored-qualifiers -Wlogical-op \
          -Wno-missing-field-initializers -Wnon-virtual-dtor -Woverloaded-virtual     \
 		 -Wpointer-arith -Wsign-promo -Wstrict-aliasing           \
