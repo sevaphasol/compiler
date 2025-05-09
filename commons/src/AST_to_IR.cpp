@@ -2,7 +2,7 @@
 
 #include "lang.h"
 #include "custom_assert.h"
-#include "ir.h"
+#include "IR.h"
 
 #define _DSL_DEFINE_
 #include "dsl.h"
@@ -15,7 +15,7 @@ lang_status_t build_IR(lang_ctx_t* ctx)
 
     //--------------------------------------------------------------------------
 
-    emit_func(ctx, "_start:");
+    emit_global_label(ctx, "_start:");
     emit_call(ctx, "_main");
 
     operand_t return_val = operand_register(IR_REG_RAX);
@@ -292,10 +292,10 @@ lang_status_t new_func_to_IR(lang_ctx_t* ctx,
 
     //--------------------------------------------------------------------------
 
-    emit_func(ctx, func_id.name);
-    emit_push(ctx, operand_register(IR_REG_RBP));
-    emit_mov (ctx, operand_register(IR_REG_RBP),
-                   operand_register(IR_REG_RSP));
+    emit_global_label(ctx, func_id.name);
+    emit_push        (ctx, operand_register(IR_REG_RBP));
+    emit_mov         (ctx, operand_register(IR_REG_RBP),
+                           operand_register(IR_REG_RSP));
 
     //--------------------------------------------------------------------------
 
@@ -382,9 +382,9 @@ lang_status_t if_to_IR(lang_ctx_t* ctx, node_t* node)
 
     size_t label_num = ctx->n_labels++;
 
-    emit_je   (ctx, label_num);
-    node_to_IR(ctx, body);
-    emit_label(ctx, label_num);
+    emit_je         (ctx, label_num);
+    node_to_IR      (ctx, body);
+    emit_local_label(ctx, label_num);
 
     //--------------------------------------------------------------------------
 
@@ -409,11 +409,11 @@ lang_status_t while_to_IR(lang_ctx_t* ctx, node_t* node)
     emit_jmp(ctx, check_label_num);
 
     size_t body_label_num = ctx->n_labels++;
-    emit_label(ctx, body_label_num);
-    node_to_IR(ctx, body);
+    emit_local_label(ctx, body_label_num);
+    node_to_IR      (ctx, body);
 
-    emit_label(ctx, check_label_num);
-    node_to_IR(ctx, statement);
+    emit_local_label(ctx, check_label_num);
+    node_to_IR      (ctx, statement);
 
     emit_pop (ctx, operand_register(IR_REG_RAX));
     emit_test(ctx, operand_register(IR_REG_RAX),

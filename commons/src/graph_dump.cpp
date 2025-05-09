@@ -10,7 +10,7 @@
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "custom_assert.h"
-#include "ir.h"
+#include "IR.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -42,14 +42,60 @@ void make_node(FILE* file, void* elem_ptr, const char* name, int val)
 
 //==============================================================================
 
-void make_dot_opd(FILE* file, operand_t* opd)
+void make_dot_reg(FILE* file, operand_t* opd)
+{
+    const char* reg_name = nullptr;
+
+    switch (opd->value.reg) {
+        case IR_REG_NAN: {
+            reg_name = "nan";
+            break;
+        }
+        case IR_REG_RAX: {
+            reg_name = "rax";
+            break;
+        }
+        case IR_REG_RSP: {
+            reg_name = "rsp";
+            break;
+        }
+        case IR_REG_RBP: {
+            reg_name = "rbp";
+            break;
+        }
+        case IR_REG_R10: {
+            reg_name = "r10";
+            break;
+        }
+        case IR_REG_R11: {
+            reg_name = "r11";
+            break;
+        }
+        default: {
+            reg_name = "error";
+            break;
+        }
+    }
+
+    fprintf(file, "elem%p["
+                  "shape=\"Mrecord\", "
+                  "label= \"{%s | name = %s}\""
+                  "];\n",
+                  opd,
+                  "REGISTER",
+                  reg_name);
+}
+
+//==============================================================================
+
+tree_dump_status_t make_dot_opd(FILE* file, operand_t* opd)
 {
     switch(opd->type) {
         case IR_OPERAND_NAN: {
-            return;
+            return TREE_DUMP_EMPTY;
         }
         case IR_OPERAND_REGISTER: {
-            make_node(file, opd, "REGISTER", opd->value.reg);
+            make_dot_reg(file, opd);
             break;
         }
         case IR_OPERAND_MEMORY: {
@@ -60,14 +106,27 @@ void make_dot_opd(FILE* file, operand_t* opd)
             make_node(file, opd, "IMMERSIVE", opd->value.imm);
             break;
         }
-        case IR_OPERAND_LABEL: {
-            make_node(file, opd, "LABEL", opd->value.imm);
+        case IR_OPERAND_GLOBAL_LABEL: {
+            fprintf(file, "elem%p["
+                          "shape=\"Mrecord\", "
+                          "label= \"{%s | name = %s}\""
+                          "];\n",
+                          opd,
+                          "GLOBAL LABEL",
+                          opd->value.name);
+            break;
+        }
+        case IR_OPERAND_LOCAL_LABEL: {
+            make_node(file, opd, "LOCAL LABEL", opd->value.label_number);
             break;
         }
         default: {
-            fprintf(stderr, "%s\n", __FILE__);
+            fprintf(stderr, "ERROR in %s:%d\n", __FILE__, __LINE__);
+            return TREE_DUMP_EMPTY;
         }
     }
+
+    return TREE_DUMP_SUCCESS;
 }
 
 //==============================================================================
@@ -80,9 +139,21 @@ tree_dump_status_t make_ir_elem(lang_ctx_t* ctx, ir_instr_t* instr, FILE* file)
 
     //-------------------------------------------------------------------//
 
-    make_node(file, instr, "OPCODE", instr->op);
-    make_dot_opd(file, &instr->opd1);
-    make_dot_opd(file, &instr->opd2);
+    fprintf(file, "elem%p["
+                  "shape=\"Mrecord\", "
+                  "label= \"{%s | asm_name = %s}\""
+                  "];\n",
+                  instr,
+                  "OPCODE",
+                  OpcodesTable[instr->op].asm_name);
+
+    if (make_dot_opd(file, &instr->opd1) == TREE_DUMP_SUCCESS) {
+        fprintf(file, "elem%p->elem%p;", &instr->op, &instr->opd1);
+    }
+
+    if (make_dot_opd(file, &instr->opd2) == TREE_DUMP_SUCCESS) {
+        fprintf(file, "elem%p->elem%p;", &instr->op, &instr->opd2);
+    }
 
     //-------------------------------------------------------------------//
 

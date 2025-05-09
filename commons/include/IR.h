@@ -24,43 +24,76 @@ enum reg_t
 
 enum opcode_t
 {
-    IR_OPCODE_NOP     = 0,
-    IR_OPCODE_ADD     = 1,
-    IR_OPCODE_SUB     = 2,
-    IR_OPCODE_MUL     = 3,
-    IR_OPCODE_DIV     = 4,
-    IR_OPCODE_MOV     = 5,
-    IR_OPCODE_PUSH    = 6,
-    IR_OPCODE_POP     = 7,
-    IR_OPCODE_CALL    = 8,
-    IR_OPCODE_RET     = 9,
-    IR_OPCODE_SYSCALL = 10,
-    IR_OPCODE_LABEL   = 11,
-    IR_OPCODE_JMP     = 12,
-    IR_OPCODE_JE      = 13,
-    IR_OPCODE_JNE     = 14,
-    IR_OPCODE_TEST    = 15,
+    IR_OPCODE_NOP          = 0,
+    IR_OPCODE_ADD          = 1,
+    IR_OPCODE_SUB          = 2,
+    IR_OPCODE_MUL          = 3,
+    IR_OPCODE_DIV          = 4,
+    IR_OPCODE_MOV          = 5,
+    IR_OPCODE_PUSH         = 6,
+    IR_OPCODE_POP          = 7,
+    IR_OPCODE_CALL         = 8,
+    IR_OPCODE_RET          = 9,
+    IR_OPCODE_SYSCALL      = 10,
+    IR_OPCODE_JMP          = 11,
+    IR_OPCODE_JE           = 12,
+    IR_OPCODE_JNE          = 13,
+    IR_OPCODE_TEST         = 14,
+    IR_OPCODE_LOCAL_LABEL  = 15,
+    IR_OPCODE_GLOBAL_LABEL = 16,
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+struct opcode_info_t
+{
+    const char* asm_name;
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+const opcode_info_t OpcodesTable[] =
+{
+    {"nop"},
+    {"add"},
+    {"sub"},
+    {"mul"},
+    {"div"},
+    {"mov"},
+    {"push"},
+    {"pop"},
+    {"call"},
+    {"ret"},
+    {"syscall"},
+    {"jmp"},
+    {"je"},
+    {"jne"},
+    {"test"},
+    {"local_label"},
+    {"global_label"},
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
 enum operand_type_t
 {
-    IR_OPERAND_NAN = 0,
-    IR_OPERAND_REGISTER = 1,
-    IR_OPERAND_MEMORY = 2,
-    IR_OPERAND_IMMERSIVE = 3,
-    IR_OPERAND_LABEL = 4, // label
+    IR_OPERAND_NAN          = 0,
+    IR_OPERAND_REGISTER     = 1,
+    IR_OPERAND_MEMORY       = 2,
+    IR_OPERAND_IMMERSIVE    = 3,
+    IR_OPERAND_GLOBAL_LABEL = 4,
+    IR_OPERAND_LOCAL_LABEL  = 5,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
 union operand_value_t
 {
-    reg_t    reg;
-    int      addr;
-    number_t imm;
+    reg_t       reg;
+    int         addr;
+    number_t    imm;
     const char* name;
+    uint64_t    label_number;
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -93,7 +126,7 @@ struct ir_ctx_t
 
 lang_status_t ir_ctx_ctor(ir_ctx_t* ctx, size_t init_capacity);
 lang_status_t ir_ctx_dtor(ir_ctx_t* ctx);
-lang_status_t ir_emit(ir_ctx_t* ctx, ir_instr_t instr);
+lang_status_t ir_emit_operation(ir_ctx_t* ctx, ir_instr_t instr);
 
 //==============================================================================
 
@@ -112,8 +145,8 @@ lang_status_t emit_push(lang_ctx_t* ctx, operand_t opd);
 lang_status_t emit_pop(lang_ctx_t* ctx, operand_t opd);
 lang_status_t emit_call(lang_ctx_t* ctx, const char* name);
 lang_status_t emit_ret(lang_ctx_t* ctx);
-lang_status_t emit_func(lang_ctx_t* ctx, const char* name);
-lang_status_t emit_label(lang_ctx_t* ctx, int64_t label_number);
+lang_status_t emit_global_label(lang_ctx_t* ctx, const char* name);
+lang_status_t emit_local_label(lang_ctx_t* ctx, int64_t label_number);
 lang_status_t emit_jmp(lang_ctx_t* ctx, int64_t label_number);
 lang_status_t emit_je(lang_ctx_t* ctx, int64_t label_number);
 lang_status_t emit_jne(lang_ctx_t* ctx, int64_t label_number);

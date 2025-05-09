@@ -1,4 +1,4 @@
-#include "ir.h"
+#include "IR.h"
 #include "custom_assert.h"
 
 //—————————————————————————————————————————————————————————————————————————————
@@ -94,10 +94,18 @@ operand_t operand_immersive(int64_t imm)
 
 //==============================================================================
 
-operand_t operand_label(const char* name)
+operand_t operand_global_label(const char* name)
 {
-    return (operand_t) {.type  = IR_OPERAND_LABEL,
+    return (operand_t) {.type  = IR_OPERAND_GLOBAL_LABEL,
                         .value = {.name = name}};
+}
+
+//==============================================================================
+
+operand_t operand_local_label(uint64_t label_number)
+{
+    return (operand_t) {.type  = IR_OPERAND_LOCAL_LABEL,
+                        .value = {.label_number = label_number}};
 }
 
 //==============================================================================
@@ -204,7 +212,7 @@ lang_status_t emit_pop(lang_ctx_t* ctx, operand_t dst)
 lang_status_t emit_call(lang_ctx_t* ctx, const char* name)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_CALL, operand_label(name), {}});
+                             {IR_OPCODE_CALL, operand_global_label(name), {}});
 }
 
 //==============================================================================
@@ -225,18 +233,18 @@ lang_status_t emit_syscall(lang_ctx_t* ctx)
 
 //==============================================================================
 
-lang_status_t emit_func(lang_ctx_t* ctx, const char* name)
+lang_status_t emit_global_label(lang_ctx_t* ctx, const char* name)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_LABEL, operand_label(name), {}});
+                             {IR_OPCODE_GLOBAL_LABEL, operand_global_label(name), {}});
 }
 
 //==============================================================================
 
-lang_status_t emit_label(lang_ctx_t* ctx, int64_t label_number)
+lang_status_t emit_local_label(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_LABEL, operand_immersive(label_number), {}});
+                             {IR_OPCODE_LOCAL_LABEL, operand_local_label(label_number), {}});
 }
 
 //==============================================================================

@@ -8,7 +8,7 @@
 #include <stdarg.h>
 
 #include "lang.h"
-#include "ir.h"
+#include "IR.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -24,6 +24,7 @@ enum tree_dump_status_t
     TREE_DUMP_STRUCT_NULL_PTR_ERROR = 1,
     TREE_DUMP_FILE_OPEN_ERROR       = 2,
     TREE_DUMP_SYSTEM_COMMAND_ERROR  = 3,
+    TREE_DUMP_EMPTY                 = 4,
 };
 
 enum dump_mode_t

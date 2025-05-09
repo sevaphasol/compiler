@@ -8,7 +8,7 @@
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "io_interaction.h"
-#include "ir.h"
+#include "IR.h"
 
 //———————————————————————————————————————————————————————————————————//
 
