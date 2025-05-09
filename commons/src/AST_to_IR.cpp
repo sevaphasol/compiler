@@ -15,8 +15,8 @@ lang_status_t build_IR(lang_ctx_t* ctx)
 
     //--------------------------------------------------------------------------
 
-    emit_global_label(ctx, "_start:");
-    emit_call(ctx, "_main");
+    emit_global_label(ctx, "_start");
+    emit_call(ctx, "main");
 
     operand_t return_val = operand_register(IR_REG_RAX);
     operand_t exit_code  = operand_immersive(60);
@@ -192,7 +192,7 @@ lang_status_t assignment_to_IR(lang_ctx_t* ctx,
 
     node_to_IR(ctx, node->right);
 
-    emit_pop(ctx, operand_immersive(var.addr));
+    emit_pop(ctx, operand_memory(var.addr));
 
     //--------------------------------------------------------------------------
 

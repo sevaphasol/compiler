@@ -8,7 +8,9 @@
     ~ var minion = 1
     ~ var papoi = 2
 
-    ~ var sum = call add(: minion : papoi)
+    ~ if (minion - papoi) {
+        ~ var sum = call add(: minion : papoi)
+    }
 
     ~ return 0
 }

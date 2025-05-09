@@ -12,12 +12,33 @@
 
 enum reg_t
 {
-    IR_REG_NAN = -1, // Invalid
     IR_REG_RAX = 0,  // Return value
     IR_REG_RSP = 4,  // Stck pointer
     IR_REG_RBP = 5,  // Base pointer for local vars
     IR_REG_R10 = 10, // Temporary 1
     IR_REG_R11 = 11, // Temporary 2
+    IR_REG_NAN = 16, // Invalid
+};
+
+const char* const RegNames[] =
+{
+    "rax",
+    "rcx",
+    "rdx",
+    "rbx",
+    "rsp",
+    "rbp",
+    "rsi",
+    "rdi",
+    "r8",
+    "r9",
+    "r10",
+    "r11",
+    "r12",
+    "r13",
+    "r14",
+    "r15",
+    "invalid"
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -41,36 +62,6 @@ enum opcode_t
     IR_OPCODE_TEST         = 14,
     IR_OPCODE_LOCAL_LABEL  = 15,
     IR_OPCODE_GLOBAL_LABEL = 16,
-};
-
-//——————————————————————————————————————————————————————————————————————————————
-
-struct opcode_info_t
-{
-    const char* asm_name;
-};
-
-//——————————————————————————————————————————————————————————————————————————————
-
-const opcode_info_t OpcodesTable[] =
-{
-    {"nop"},
-    {"add"},
-    {"sub"},
-    {"mul"},
-    {"div"},
-    {"mov"},
-    {"push"},
-    {"pop"},
-    {"call"},
-    {"ret"},
-    {"syscall"},
-    {"jmp"},
-    {"je"},
-    {"jne"},
-    {"test"},
-    {"local_label"},
-    {"global_label"},
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -120,6 +111,48 @@ struct ir_ctx_t
     ir_instr_t* buffer;
     size_t      buffer_size;
     size_t      buffer_capacity;
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+struct opcode_info_t
+{
+    const char* asm_name;
+    lang_status_t (*asm_func) (lang_ctx_t* ctx, ir_instr_t* instr);
+    lang_status_t (*bin_func) (lang_ctx_t* ctx, )
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t zeroary_opcode_IR_to_asm(lang_ctx_t* ctx, ir_instr_t* instr);
+lang_status_t unary_opcode_IR_to_asm (lang_ctx_t* ctx, ir_instr_t* instr);
+lang_status_t binary_opcode_IR_to_asm (lang_ctx_t* ctx, ir_instr_t* instr);
+lang_status_t IR_to_asm_local_label (lang_ctx_t* ctx, ir_instr_t* instr);
+lang_status_t IR_to_asm_global_label(lang_ctx_t* ctx, ir_instr_t* instr);
+
+lang_status_t IR_to_asm(lang_ctx_t* ctx);
+
+//——————————————————————————————————————————————————————————————————————————————
+
+const opcode_info_t OpcodesTable[] =
+{
+    {"nop",          &zeroary_opcode_IR_to_asm },
+    {"add",          &binary_opcode_IR_to_asm  },
+    {"sub",          &binary_opcode_IR_to_asm  },
+    {"mul",          &binary_opcode_IR_to_asm  },
+    {"div",          &binary_opcode_IR_to_asm  },
+    {"mov",          &binary_opcode_IR_to_asm  },
+    {"push qword",   &unary_opcode_IR_to_asm   },
+    {"pop qword",    &unary_opcode_IR_to_asm   },
+    {"call",         &unary_opcode_IR_to_asm   },
+    {"ret",          &zeroary_opcode_IR_to_asm },
+    {"syscall",      &zeroary_opcode_IR_to_asm },
+    {"jmp",          &unary_opcode_IR_to_asm   },
+    {"je",           &unary_opcode_IR_to_asm   },
+    {"jne",          &unary_opcode_IR_to_asm   },
+    {"test",         &binary_opcode_IR_to_asm  },
+    {"local_label",  &zeroary_opcode_IR_to_asm },
+    {"global_label", &zeroary_opcode_IR_to_asm },
 };
 
 //——————————————————————————————————————————————————————————————————————————————

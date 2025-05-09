@@ -252,7 +252,7 @@ lang_status_t emit_local_label(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_jmp(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JMP, operand_immersive(label_number), {}});
+                             {IR_OPCODE_JMP, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
@@ -260,7 +260,7 @@ lang_status_t emit_jmp(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_je(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JE, operand_immersive(label_number), {}});
+                             {IR_OPCODE_JE, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
@@ -268,7 +268,7 @@ lang_status_t emit_je(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_jne(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JNE, operand_immersive(label_number), {}});
+                             {IR_OPCODE_JNE, operand_local_label(label_number), {}});
 }
 
 //==============================================================================

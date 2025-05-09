@@ -69,6 +69,8 @@ int main(int argc, const char* argv[])
 
     ir_buffer_graph_dump(&ctx, ctx.ir_ctx->buffer);
 
+    IR_to_asm(&ctx);
+
     ir_ctx_dtor(&ir_ctx);
 
     //-------------------------------------------------------------------//
