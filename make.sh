@@ -13,3 +13,5 @@ make || exit 1
 # Возвращаемся в корень и запускаем backend
 cd .. || exit 1
 back-end/build/backend frontend.txt backend.asm
+
+nasm -felf64 backend.asm -o backend.o

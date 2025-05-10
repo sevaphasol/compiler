@@ -17,7 +17,7 @@ lang_status_t IR_to_asm(lang_ctx_t* ctx)
 
     size_t size = ctx->ir_ctx->buffer_size;
 
-    for (int i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         ir_instr_t instr = ctx->ir_ctx->buffer[i];
         (*OpcodesTable[instr.op].asm_func)(ctx, &instr);
     }

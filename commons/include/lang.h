@@ -314,6 +314,13 @@ struct name_table_t
 
 struct node_allocator_t;
 
+struct byte_code_ctx_t
+{
+    char* buffer;
+    size_t buffer_size;
+    size_t buffer_capacity;
+};
+
 //———————————————————————————————————————————————————————————————————//
 
 struct ir_ctx_t;
@@ -344,6 +351,7 @@ struct lang_ctx_t
     size_t            n_locals;
 
     ir_ctx_t*         ir_ctx;
+    byte_code_ctx_t*  byte_code_ctx;
 };
 
 //———————————————————————————————————————————————————————————————————//
