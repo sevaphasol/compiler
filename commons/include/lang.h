@@ -8,6 +8,7 @@
 
 #include "buffer.h"
 #include "lang_status.h"
+#include "fixup_table.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -83,20 +84,20 @@ struct operator_t
 
 //———————————————————————————————————————————————————————————————————//
 
-lang_status_t binary_operation_to_IR  (lang_ctx_t* ctx, node_t* node);
-lang_status_t assignment_to_IR        (lang_ctx_t* ctx, node_t* node);
-lang_status_t statement_to_IR         (lang_ctx_t* ctx, node_t* node);
-lang_status_t if_to_IR                (lang_ctx_t* ctx, node_t* node);
-lang_status_t while_to_IR             (lang_ctx_t* ctx, node_t* node);
-lang_status_t new_var_to_IR           (lang_ctx_t* ctx, node_t* node);
-lang_status_t new_func_to_IR          (lang_ctx_t* ctx, node_t* node);
-lang_status_t return_to_IR            (lang_ctx_t* ctx, node_t* node);
-lang_status_t in_to_IR                (lang_ctx_t* ctx, node_t* node);
-lang_status_t call_to_IR              (lang_ctx_t* ctx, node_t* node);
-lang_status_t exit_to_IR              (lang_ctx_t* ctx, node_t* node);
-lang_status_t var_to_IR               (lang_ctx_t* ctx, node_t* node);
-lang_status_t node_to_IR              (lang_ctx_t* ctx, node_t* node);
-lang_status_t build_IR                (lang_ctx_t* ctx);
+lang_status_t binary_operation_to_ir  (lang_ctx_t* ctx, node_t* node);
+lang_status_t assignment_to_ir        (lang_ctx_t* ctx, node_t* node);
+lang_status_t statement_to_ir         (lang_ctx_t* ctx, node_t* node);
+lang_status_t if_to_ir                (lang_ctx_t* ctx, node_t* node);
+lang_status_t while_to_ir             (lang_ctx_t* ctx, node_t* node);
+lang_status_t new_var_to_ir           (lang_ctx_t* ctx, node_t* node);
+lang_status_t new_func_to_ir          (lang_ctx_t* ctx, node_t* node);
+lang_status_t return_to_ir            (lang_ctx_t* ctx, node_t* node);
+lang_status_t in_to_ir                (lang_ctx_t* ctx, node_t* node);
+lang_status_t call_to_ir              (lang_ctx_t* ctx, node_t* node);
+lang_status_t exit_to_ir              (lang_ctx_t* ctx, node_t* node);
+lang_status_t var_to_ir               (lang_ctx_t* ctx, node_t* node);
+lang_status_t node_to_ir              (lang_ctx_t* ctx, node_t* node);
+lang_status_t build_ir                (lang_ctx_t* ctx);
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -121,32 +122,32 @@ lang_status_t src_hlt               (lang_ctx_t* ctx, node_t* cur_node);
 const operator_t OperatorsTable[] =
 { // code           name and len              asm_name    n_childs       to_ir_func                src_func
     {UNDEFINED,     nullptr, 0,               nullptr,       0,          nullptr                 , nullptr,           },
-    {ADD,           STR_AND_LEN("+"),         "add",         2,          &binary_operation_to_IR , &src_binary_op,    },
-    {SUB,           STR_AND_LEN("-"),         "sub",         2,          &binary_operation_to_IR , &src_binary_op,    },
-    {MUL,           STR_AND_LEN("*"),         "mul",         2,          &binary_operation_to_IR , &src_binary_op,    },
-    {DIV,           STR_AND_LEN("/"),         "div",         2,          &binary_operation_to_IR , &src_binary_op,    },
+    {ADD,           STR_AND_LEN("+"),         "add",         2,          &binary_operation_to_ir , &src_binary_op,    },
+    {SUB,           STR_AND_LEN("-"),         "sub",         2,          &binary_operation_to_ir , &src_binary_op,    },
+    {MUL,           STR_AND_LEN("*"),         "mul",         2,          &binary_operation_to_ir , &src_binary_op,    },
+    {DIV,           STR_AND_LEN("/"),         "div",         2,          &binary_operation_to_ir , &src_binary_op,    },
     {COS,           STR_AND_LEN("cos"),       "cos",         1,          nullptr                 , &src_unary_op,     },
     {SIN,           STR_AND_LEN("sin"),       "sin",         1,          nullptr                 , &src_unary_op,     },
     {SQRT,          STR_AND_LEN("sqrt"),      "sqrt",        1,          nullptr                 , &src_unary_op,     },
     {POW,           STR_AND_LEN("^"),         "pow",         1,          nullptr                 , &src_binary_op,    },
-    {BIGGER,        STR_AND_LEN(">"),         nullptr,       2,          &assignment_to_IR       , &src_binary_op,    },
-    {SMALLER,       STR_AND_LEN("<"),         nullptr,       2,          &assignment_to_IR       , &src_binary_op,    },
-    {ASSIGNMENT,    STR_AND_LEN("="),         nullptr,       2,          &assignment_to_IR       , &src_binary_op,    },
+    {BIGGER,        STR_AND_LEN(">"),         nullptr,       2,          &assignment_to_ir       , &src_binary_op,    },
+    {SMALLER,       STR_AND_LEN("<"),         nullptr,       2,          &assignment_to_ir       , &src_binary_op,    },
+    {ASSIGNMENT,    STR_AND_LEN("="),         nullptr,       2,          &assignment_to_ir       , &src_binary_op,    },
     {OPEN_BRACKET,  STR_AND_LEN("("),         nullptr,       1,          nullptr                 , nullptr,           },
     {CLOSE_BRACKET, STR_AND_LEN(")"),         nullptr,       1,          nullptr                 , nullptr,           },
     {BODY_START,    STR_AND_LEN("{"),         nullptr,       1,          nullptr                 , nullptr,           },
     {BODY_END,      STR_AND_LEN("}"),         nullptr,       1,          nullptr                 , nullptr,           },
-    {STATEMENT,     STR_AND_LEN("~"),         nullptr,       2,          &statement_to_IR        , &src_statement,    },
-    {IF,            STR_AND_LEN("if"),        nullptr,       2,          &if_to_IR               , &src_cond,         },
-    {WHILE,         STR_AND_LEN("while"),     nullptr,       2,          &while_to_IR            , &src_cond,         },
-    {RET,           STR_AND_LEN("return"),    nullptr,       0,          &return_to_IR           , &src_ret,          },
+    {STATEMENT,     STR_AND_LEN("~"),         nullptr,       2,          &statement_to_ir        , &src_statement,    },
+    {IF,            STR_AND_LEN("if"),        nullptr,       2,          &if_to_ir               , &src_cond,         },
+    {WHILE,         STR_AND_LEN("while"),     nullptr,       2,          &while_to_ir            , &src_cond,         },
+    {RET,           STR_AND_LEN("return"),    nullptr,       0,          &return_to_ir           , &src_ret,          },
     {PARAM_LINKER,  STR_AND_LEN(":"),         nullptr,       2,          nullptr                 , &src_param_linker, },
-    {NEW_VAR,       STR_AND_LEN("var"),       nullptr,       2,          &new_var_to_IR          , &src_new_var,      },
-    {NEW_FUNC,      STR_AND_LEN("func"),      nullptr,       2,          &new_func_to_IR         , &src_new_func,     },
-    {IN,            STR_AND_LEN("scan"),      "in",          1,          &in_to_IR               , &src_in,           },
+    {NEW_VAR,       STR_AND_LEN("var"),       nullptr,       2,          &new_var_to_ir          , &src_new_var,      },
+    {NEW_FUNC,      STR_AND_LEN("func"),      nullptr,       2,          &new_func_to_ir         , &src_new_func,     },
+    {IN,            STR_AND_LEN("scan"),      "in",          1,          &in_to_ir               , &src_in,           },
     {OUT,           STR_AND_LEN("print"),     "out",         1,          nullptr                 , &src_out,          },
-    {CALL,          STR_AND_LEN("call"),      "call",        0,          &call_to_IR             , &src_call,         },
-    {HLT,           STR_AND_LEN("exit"),      nullptr,       0,          &exit_to_IR             , &src_hlt,          }
+    {CALL,          STR_AND_LEN("call"),      "call",        0,          &call_to_ir             , &src_call,         },
+    {HLT,           STR_AND_LEN("exit"),      nullptr,       0,          &exit_to_ir             , &src_hlt,          }
 };
 
 #undef STR_AND_LEN
@@ -230,7 +231,7 @@ struct name_table_t
 
 struct node_allocator_t;
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————
 
 struct lang_ctx_t
 {
@@ -257,8 +258,11 @@ struct lang_ctx_t
     size_t            n_globals;
     size_t            n_locals;
 
-    buffer_t*         ir_buf;
-    buffer_t*         bin_buf;
+    buffer_t          ir_buf;
+    buffer_t          bin_buf;
+
+    label_table_t     label_table;
+    fixup_table_t     fixups;
 };
 
 //———————————————————————————————————————————————————————————————————//

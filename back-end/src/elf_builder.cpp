@@ -49,8 +49,8 @@ lang_status_t build_elf(buffer_t* elf, const uint8_t* code, size_t code_size)
     buffer_t shstrtab = {};
     shstrtab_init(&shstrtab, strlen("0.text0.shstrtab0"));
 
-    size_t text_name_offset     = 0;
-    size_t shstrtab_name_offset = 0;
+    uint32_t text_name_offset     = 0;
+    uint32_t shstrtab_name_offset = 0;
 
     add_section_name(&shstrtab, ".text",     &text_name_offset);
     add_section_name(&shstrtab, ".shstrtab", &shstrtab_name_offset);

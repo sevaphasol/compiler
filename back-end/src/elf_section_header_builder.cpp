@@ -20,13 +20,13 @@ lang_status_t shstrtab_init(buffer_t* tab, size_t init_capacity)
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t add_section_name(buffer_t* tab, const char* name, size_t* offset)
+lang_status_t add_section_name(buffer_t* tab, const char* name, uint32_t* offset)
 {
     ASSERT(tab);
     ASSERT(name);
     ASSERT(offset);
 
-    *offset = tab->size;
+    *offset = (uint32_t) tab->size;
     buf_write(tab, name, strlen(name) + 1); // +1 for including '\0'
 
     return LANG_SUCCESS;

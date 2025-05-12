@@ -23,7 +23,7 @@ enum ir_opd_type_t {
 union ir_opd_value_t {
     reg_t       reg;
     int32_t     offset;
-    int         imm;
+    int32_t     imm;
     const char* global_label_name;
     size_t      local_label_number;
 };

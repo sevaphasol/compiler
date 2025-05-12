@@ -37,7 +37,7 @@ struct bin_instr_info_t {
 
 struct bin_instr_t {
     rex_t            rex;
-    uint16_t         opcode;
+    uint16_t         opc;
     modrm_t          modrm;
     int32_t          disp;
     int64_t          imm;

@@ -11,7 +11,7 @@
 //——————————————————————————————————————————————————————————————————————————————
 
 void build_ident   (unsigned char* e_ident);
-void build_elf_hdr(Elf64_Ehdr* hdr, size_t n_phdrs, size_t n_shdrs, Elf64_Off shoff, Elf64_Half shstrndx);
+void build_elf_hdr(Elf64_Ehdr* hdr, uint16_t n_phdrs, uint16_t n_shdrs, Elf64_Off shoff, Elf64_Half shstrndx);
 
 //——————————————————————————————————————————————————————————————————————————————
 

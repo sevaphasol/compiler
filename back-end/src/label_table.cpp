@@ -1,5 +1,6 @@
 #include "lang_status.h"
 #include "fixup_table.h"
+#include "custom_assert.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,7 +10,7 @@ lang_status_t label_table_ctor(label_table_t* table, size_t init_capacity)
 {
     ASSERT(table);
 
-    table->labels = calloc(init_capacity, sizeof(label_t));
+    table->labels = (label_t*) calloc(init_capacity, sizeof(label_t));
 
     if (!table->labels) {
         return LANG_STD_ALLOCATE_ERROR;
@@ -29,8 +30,8 @@ lang_status_t label_table_dtor(label_table_t* table)
 
     for (size_t i = 0; i < table->size; ++i) {
         if (table->labels[i].is_global &&
-            table->labels[i].info.global_name) {
-            free(table->labels[i].info.global_name); // for strdup
+            table->labels[i].value.global_name) {
+            free(table->labels[i].value.global_name); // for strdup
         }
     }
 
@@ -61,14 +62,17 @@ lang_status_t label_table_expand(label_table_t* table)
 lang_status_t label_table_add_global(label_table_t* table, const char* name, size_t address)
 {
     ASSERT(table);
+    ASSERT(name);
 
-    if (table->count >= table->capacity) {
+    if (table->size >= table->capacity) {
         if (!label_table_expand(table)) return LANG_STD_ALLOCATE_ERROR;
     }
 
+    label_value_t value = {.global_name = strdup(name)};
+
     table->labels[table->size++] = {
-        .address = address,
-        .info.global_name = strdup(name),
+        .address   = address,
+        .value     = value,
         .is_global = 1
     };
 
@@ -81,13 +85,15 @@ lang_status_t label_table_add_local(label_table_t* table, size_t number, size_t 
 {
     ASSERT(table);
 
-    if (table->count >= table->capacity) {
+    if (table->size >= table->capacity) {
         if(!label_table_expand(table)) return LANG_STD_ALLOCATE_ERROR;
     }
 
+    label_value_t value = {.local_number = number};
+
     table->labels[table->size++] = {
-        .address = address,
-        .info.local_number = number,
+        .address   = address,
+        .value     = value,
         .is_global = 0
     };
 
@@ -96,15 +102,15 @@ lang_status_t label_table_add_local(label_table_t* table, size_t number, size_t 
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t label_table_find_global(label_table_t* table, const char* name, size_t* addr)
+lang_status_t label_table_find_global(label_table_t* table, const char* name, uint32_t* addr)
 {
     ASSERT(table);
     ASSERT(name);
 
     for (size_t i = 0; i < table->size; ++i) { //TODO hashmap
         if (table->labels[i].is_global &&
-            strcmp(table->labels[i].info.global_name, name) == 0) {
-            *size = table->labels[i].address;
+            strcmp(table->labels[i].value.global_name, name) == 0) {
+            *addr = table->labels[i].address;
             return LANG_SUCCESS;
         }
     }
@@ -114,14 +120,16 @@ lang_status_t label_table_find_global(label_table_t* table, const char* name, si
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t label_table_find_local(label_table_t* table, size_t number, size_t* addr)
+lang_status_t label_table_find_local(label_table_t* table, size_t number, uint32_t* addr)
 {
     ASSERT(table);
     ASSERT(addr);
 
-    for (size_t i = 0; i < table->count; ++i) {
+    size_t table_size = table->size;
+
+    for (size_t i = 0; i < table_size; ++i) {
         if (!table->labels[i].is_global &&
-            table->labels[i].info.local_number == number) {
+            table->labels[i].value.local_number == number) {
             *addr = table->labels[i].address;
             return LANG_SUCCESS;
         }

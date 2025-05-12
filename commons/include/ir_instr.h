@@ -19,12 +19,12 @@ struct ir_instr_t {
 //——————————————————————————————————————————————————————————————————————————————
 
 enum ir_instr_type_t {
-    INSTR_TYPE_REG_REG,   // reg ← reg
-    INSTR_TYPE_REG_MEM,   // reg ← [rbp ± offset]
-    INSTR_TYPE_MEM_REG,   // [rbp ± offset] ← reg
-    INSTR_TYPE_REG_IMM,   // reg ← imm
-    INSTR_TYPE_MEM_IMM,   // [rbp ± offset] ← imm
-    INSTR_TYPE_UNDEFINED,
+    IR_INSTR_TYPE_REG_REG   = 0,   // reg ← reg
+    IR_INSTR_TYPE_REG_MEM   = 1,   // reg ← [rbp ± offset]
+    IR_INSTR_TYPE_MEM_REG   = 2,   // [rbp ± offset] ← reg
+    IR_INSTR_TYPE_REG_IMM   = 3,   // reg ← imm
+    IR_INSTR_TYPE_MEM_IMM   = 4,   // [rbp ± offset] ← imm
+    IR_INSTR_TYPE_UNDEFINED = 5,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

@@ -19,8 +19,7 @@
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t ir_ctx_ctor(ir_ctx_t* ctx, size_t init_capacity);
-lang_status_t ir_ctx_dtor(ir_ctx_t* ctx);
+lang_status_t ir_to_binary(lang_ctx_t* ctx);
 
 //——————————————————————————————————————————————————————————————————————————————
 

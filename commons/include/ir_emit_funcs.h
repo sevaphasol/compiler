@@ -29,7 +29,7 @@ lang_status_t emit_jne              (lang_ctx_t* ctx, int64_t label_number);
 lang_status_t emit_syscall          (lang_ctx_t* ctx);
 lang_status_t emit_test             (lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2);
 lang_status_t emit_binary_operation (lang_ctx_t* ctx, ir_opc_t opcode, ir_opd_t opd1, ir_opd_t opd2);
-lang_status_t ir_emit_operation     (ir_ctx_t* ctx, ir_instr_t instr);
+lang_status_t ir_emit_instr(buffer_t* ir_buf, ir_instr_t ir_instr);
 
 //——————————————————————————————————————————————————————————————————————————————
 

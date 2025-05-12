@@ -13,15 +13,16 @@
 
 lang_status_t ir_emit_instr(buffer_t* ir_buf, ir_instr_t ir_instr)
 {
-    return buf_write(ir_buf, ir_instr, sizeof(ir_instr_t));
+    ir_instr_t* ir_instr_ptr = &ir_instr;
+
+    return buf_write(ir_buf, ir_instr_ptr, sizeof(ir_instr_t));
 }
 
 //==============================================================================
 
-lang_status_t build_ir(lang_ctx_t* ctx, node_t* tree)
+lang_status_t build_ir(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
-    ASSERT(tree);
 
     //--------------------------------------------------------------------------
 
@@ -30,13 +31,13 @@ lang_status_t build_ir(lang_ctx_t* ctx, node_t* tree)
     //--------------------------------------------------------------------------
 
     EMIT(OP_GLOBAL_LABEL("_start"));
-    EMIT(OP_CALL("main"));
+    EMIT(OP_CALL(OPD_GLOBAL_LABEL("main")));
     EMIT(OP_MOV(OPD_REG(REG_RAX), OPD_IMM(60)));
     EMIT(OP_SYSCALL);
 
     //--------------------------------------------------------------------------
 
-    return node_to_ir(ctx, tree);
+    return node_to_ir(ctx, ctx->tree);
 }
 
 //==============================================================================
@@ -50,13 +51,13 @@ lang_status_t node_to_ir(lang_ctx_t* ctx, node_t* node)
 
     switch(node->value_type) {
         case OPERATOR:
-            (*_OP(node).to_ir_func)(ctx->ir_buf, node);
+            (*_OP(node).to_ir_func)(ctx, node);
             break;
         case IDENTIFIER:
-            var_to_ir(ctx->ir_buf, node);
+            var_to_ir(ctx, node);
             break;
         case NUMBER:
-            EMIT(OPD_IMM(node->value.number));
+            EMIT(OP_PUSH(OPD_IMM(node->value.number)));
             break;
         default:
             return LANG_ERROR;
@@ -78,7 +79,7 @@ lang_status_t var_to_ir(lang_ctx_t* ctx, node_t* node)
 
     identifier_t var = _ID(node);
 
-    EMIT(OPD_MEM(var.addr));
+    EMIT(OP_PUSH(OPD_MEM(var.addr)));
 
     //--------------------------------------------------------------------------
 
@@ -133,12 +134,12 @@ lang_status_t call_to_ir(lang_ctx_t* ctx, node_t* node)
 
     passing_func_params_to_ir(ctx, func_params, func_id.n_params);
 
-    EMIT(OP_CALL(func_id.name));
+    EMIT(OP_CALL(OPD_GLOBAL_LABEL(func_id.name)));
 
-    size_t allocated_memory = VAR_SIZE * func_id.n_params;
+    int32_t allocated_memory = VAR_SIZE * func_id.n_params;
 
     EMIT(OP_ADD(OPD_REG(REG_RSP), OPD_IMM(allocated_memory)));
-    EMIT(OP_PUSH(OPD_REG(REG_RAX));
+    EMIT(OP_PUSH(OPD_REG(REG_RAX)));
 
     //--------------------------------------------------------------------------
 
@@ -154,7 +155,7 @@ lang_status_t ir_emit_binary_operation(buffer_t* ir_buf,
 {
     ASSERT(ir_buf);
 
-    ir_opc_t ir_opc = OP_NOP;
+    ir_opc_t ir_opc = IR_OPC_NOP;
 
     switch (ast_opc) {
         case ADD:
@@ -185,15 +186,14 @@ lang_status_t binary_operation_to_ir(lang_ctx_t* ctx, node_t* node)
 
     //--------------------------------------------------------------------------
 
-    node_to_IR(ctx, node->left);
+    node_to_ir(ctx, node->left);
     EMIT(OP_POP(OPD_REG(REG_R10)));
 
-    node_to_IR(ctx, node->right);
+    node_to_ir(ctx, node->right);
     EMIT(OP_POP(OPD_REG(REG_R11)));
 
-    ir_emit_binary_operation(ctx->ir_buf, node->value.operator_code,
-                             operand_register(IR_REG_R10),
-                             operand_register(IR_REG_R11));
+    ir_emit_binary_operation(&ctx->ir_buf, node->value.operator_code,
+                             OPD_REG(REG_R10), OPD_REG(REG_R11));
 
     EMIT(OP_PUSH(OPD_REG(REG_R10)));
 
@@ -215,7 +215,7 @@ lang_status_t assignment_to_ir(lang_ctx_t* ctx, node_t* node) // TODO global var
 
     //--------------------------------------------------------------------------
 
-    node_to_IR(ctx, node->right);
+    node_to_ir(ctx, node->right);
 
     EMIT(OP_POP(OPD_MEM(var.addr)));
 
@@ -234,11 +234,11 @@ lang_status_t statement_to_ir(lang_ctx_t* ctx, node_t* node)
     //--------------------------------------------------------------------------
 
     if (node->left) {
-        node_to_IR(ctx, node->left);
+        node_to_ir(ctx, node->left);
     }
 
     if (node->right) {
-        node_to_IR(ctx, node->right);
+        node_to_ir(ctx, node->right);
     }
 
     //--------------------------------------------------------------------------
@@ -321,22 +321,23 @@ lang_status_t new_func_to_ir(lang_ctx_t* ctx,
 
     //--------------------------------------------------------------------------
 
-    size_t sub_rsp_position = ctx->ir_ctx->buffer_size++;
+    size_t sub_rsp_position = ctx->ir_buf.size++;
 
     if (func_params) {
         receiving_func_params_to_ir(ctx, func_params, func_id.n_params);
     }
 
-    node_to_IR(ctx, func_body);
+    node_to_ir(ctx, func_body);
 
     //--------------------------------------------------------------------------
 
-    size_t cur_position = ctx->ir_ctx->buffer_size;
+    size_t cur_position = ctx->ir_buf.size;
+    int32_t allocated_memory = VAR_SIZE * ctx->n_locals;
 
-    ctx->ir_ctx->buffer_size = sub_rsp_position;
-    EMIT(OP_SUB(OPD_REG(REG_RSP), OPD_IMM(VAR_SIZE * ctx->n_locals)));
+    ctx->ir_buf.size = sub_rsp_position;
+    EMIT(OP_SUB(OPD_REG(REG_RSP), OPD_IMM(allocated_memory)));
 
-    ctx->ir_ctx->buffer_size = cur_position;
+    ctx->ir_buf.size = cur_position;
 
     //--------------------------------------------------------------------------
 
@@ -367,9 +368,9 @@ lang_status_t return_to_ir(lang_ctx_t* ctx, node_t* node)
         EMIT(OP_POP(OPD_REG(REG_RAX)));
     }
 
-    size_t allocated_memory = VAR_SIZE * ctx->n_locals;
+    int32_t allocated_memory = VAR_SIZE * ctx->n_locals;
 
-    EMIT(OP_ADD(OPD_REG(REG_RSP), OPD_REG(allocated_memory)));
+    EMIT(OP_ADD(OPD_REG(REG_RSP), OPD_IMM(allocated_memory)));
     EMIT(OP_POP(OPD_REG(REG_RBP)));
     EMIT(OP_RET);
 
@@ -392,7 +393,7 @@ lang_status_t if_to_ir(lang_ctx_t* ctx, node_t* node)
 
     //--------------------------------------------------------------------------
 
-    node_to_IR(ctx, statement);
+    node_to_ir(ctx, statement);
 
     EMIT(OP_POP(OPD_REG(REG_RAX)));
     EMIT(OP_TEST(OPD_REG(REG_RAX), OPD_REG(REG_RAX)));
@@ -400,7 +401,7 @@ lang_status_t if_to_ir(lang_ctx_t* ctx, node_t* node)
     size_t label_num = ctx->n_labels++;
 
     EMIT(OP_JE(OPD_LOCAL_LABEL(label_num)));
-    node_to_IR(ctx, body);
+    node_to_ir(ctx, body);
     EMIT(OP_LOCAL_LABEL(label_num));
 
     //--------------------------------------------------------------------------
@@ -443,7 +444,7 @@ lang_status_t while_to_ir(lang_ctx_t* ctx, node_t* node)
 
 //==============================================================================
 
-lang_status_t in_to_IR(lang_ctx_t* ctx, node_t* node)
+lang_status_t in_to_ir(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
     ASSERT(node);
@@ -453,15 +454,15 @@ lang_status_t in_to_IR(lang_ctx_t* ctx, node_t* node)
 
 //==============================================================================
 
-lang_status_t exit_to_IR(lang_ctx_t* ctx, node_t* node)
+lang_status_t exit_to_ir(lang_ctx_t* ctx, node_t* node)
 {
     ASSERT(ctx);
     ASSERT(node);
 
-    ir_opd_t return_val = operand_register(IR_REG_RAX);
-    ir_opd_t exit_code  = operand_immersive(60);
+    ir_opd_t return_val = OPD_REG(REG_RAX);
+    ir_opd_t exit_code  = OPD_IMM(60);
 
-    EMIT(OP_MOV(OPD_REG(REG_RAX)), REG_IMM(60));
+    EMIT(OP_MOV(OPD_REG(REG_RAX), OPD_IMM(60)));
     EMIT(OP_SYSCALL);
 
     return LANG_SUCCESS;

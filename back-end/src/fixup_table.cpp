@@ -15,8 +15,8 @@ lang_status_t fixup_table_ctor(fixup_table_t* fixups, size_t init_capacity)
         return LANG_ERROR;
     }
 
-    ctx->fixups.capacity = init_capacity;
-    ctx->fixups.size = 0;
+    fixups->capacity = init_capacity;
+    fixups->size = 0;
 
     return LANG_SUCCESS;
 }
@@ -38,33 +38,33 @@ lang_status_t fixup_table_dtor(fixup_table_t* fixups)
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_ctx_t add_fixup(lang_ctx_t* ctx,
-                     const char* global_name,
-                     size_t      local_number,
-                     size_t      offset)
+lang_status_t add_fixup(fixup_table_t* table,
+                        const char* global_name,
+                        size_t      local_number,
+                        uint32_t    offset)
 {
-    ASSERT(ctx);
+    ASSERT(table);
 
-    if (ctx->fixups.size >= ctx->fixups.capacity) {
-        ctx->fixups.entries = realloc(ctx->fixups.entries, ctx->fixups.capacity *
+    if (table->size >= table->capacity) {
+        table->entries = (fixup_entry_t*) realloc(table->entries, table->capacity *
                                                            2 * sizeof(fixup_entry_t));
-        if (!ctx->fixups->entries) {
+        if (!table->entries) {
             return LANG_ERROR;
         }
 
-        ctx->fixups.capacity *= 2;
+        table->capacity *= 2;
     }
 
     label_t label = {};
     if (global_name) {
-        label.info.global_name = strdup(global_name);
+        label.value.global_name = strdup(global_name);
         label.is_global = 1;
     } else {
-        label.info.local_number = number;
+        label.value.local_number = local_number;
         label.is_global = 0;
     }
 
-    table->entries[table->count++] = {
+    table->entries[table->size++] = {
         .offset = offset,
         .label = label
     };
@@ -82,16 +82,16 @@ lang_status_t fixup_table_apply(fixup_table_t* fixup_table, label_table_t* label
     for (size_t i = 0; i < fixup_table->size; ++i) {
         fixup_entry_t* entry = &fixup_table->entries[i];
 
-        size_t target_addr = 0;
+        uint32_t target_addr = 0;
         if (entry->label.is_global) {
-            VERIFY(!label_table_find_global(label_table, entry->label.info.global_name, &target_addr),
+            VERIFY(!label_table_find_global(label_table, entry->label.value.global_name, &target_addr),
                    return LANG_ERROR);
         } else {
-            VERIFY(label_table_find_local(label_table, entry->label.info.local_number, &target_addr),
+            VERIFY(label_table_find_local(label_table, entry->label.value.local_number, &target_addr),
                    return LANG_ERROR);
         }
 
-        size_t current_addr = entry->offset + 4;
+        uint32_t current_addr = entry->offset + 4;
         int32_t rel = target_addr - current_addr;
         memcpy(code_buf->data + entry->offset, &rel, 4);
     }

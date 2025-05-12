@@ -26,15 +26,41 @@ const char* const RegNames[] = {
 //——————————————————————————————————————————————————————————————————————————————
 
 enum x86_64_opcode_t {
-    X86_64_NOP               = 0x90,
-    X86_64_ADD_OPCODE        = 0x01,
-    X86_64_SUB_OPCODE        = 0x29,
-    X86_64_MOV_OPCODE        = 0x89,
-    X86_64_PUSH_OPCODE       = 0x50,
-    X86_64_POP_OPCODE        = 0x58,
+    X86_64_NOP                  = 0x90,
+
+    X86_64_ADD_RR_OPCODE        = 0x01,
+    X86_64_ADD_RM_OPCODE        = 0x03,
+    X86_64_ADD_MR_OPCODE        = 0x01,
+    X86_64_ADD_RI_OPCODE        = 0x81,
+    X86_64_ADD_MI_OPCODE        = 0x81,
+
+    X86_64_SUB_RR_OPCODE        = 0x29,
+    X86_64_SUB_RM_OPCODE        = 0x2b,
+    X86_64_SUB_MR_OPCODE        = 0x29,
+    X86_64_SUB_RI_OPCODE        = 0x81,
+    X86_64_SUB_MI_OPCODE        = 0x81,
+
+    X86_64_MOV_RR_OPCODE        = 0x89,
+    X86_64_MOV_RM_OPCODE        = 0x8b,
+    X86_64_MOV_MR_OPCODE        = 0x89,
+    X86_64_MOV_RI_OPCODE        = 0x34,
+    X86_64_MOV_MI_OPCODE        = 0xc7,
+
+    X86_64_TEST_RR_OPCODE       = 0x85,
+    X86_64_TEST_RM_OPCODE       = 0x85,
+    X86_64_TEST_MR_OPCODE       = 0x85,
+    X86_64_TEST_RI_OPCODE       = 0xf7,
+    X86_64_TEST_MI_OPCODE       = 0xf7,
+
+    X86_64_PUSH_R_OPCODE       = 0x50,
+    X86_64_PUSH_I_OPCODE       = 0x68,
+    X86_64_PUSH_M_OPCODE       = 0xff,
+
+    X86_64_POP_R_OPCODE        = 0x58,
+    X86_64_POP_M_OPCODE        = 0x8f,
+
     X86_64_CALL_REL32_OPCODE = 0xE8,
     X86_64_RET               = 0xC3,
-    X86_64_TEST_OPCODE       = 0x85,
     X86_64_JMP_REL32_OPCODE  = 0xE9,
     X86_64_JE_REL32_OPCODE1  = 0x84,
     X86_64_JE_REL32_OPCODE2  = 0x0F,

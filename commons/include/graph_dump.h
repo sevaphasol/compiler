@@ -8,7 +8,7 @@
 #include <stdarg.h>
 
 #include "lang.h"
-#include "IR.h"
+#include "ir.h"
 
 //———————————————————————————————————————————————————————————————————//
 
