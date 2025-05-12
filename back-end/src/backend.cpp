@@ -8,7 +8,7 @@
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "io_interaction.h"
-#include "IR.h"
+#include "ir.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -56,22 +56,27 @@ int main(int argc, const char* argv[])
 
     //-------------------------------------------------------------------//
 
-    ir_ctx_t ir_ctx = {};
-    ctx.ir_ctx = &ir_ctx;
-
-    ir_ctx_ctor(&ir_ctx, IR_BUFFER_INIT_CAPACITY);
-
-    //--------------------------------------------------------------------------
-
-    VERIFY(build_IR(&ctx),
-           lang_ctx_dtor(&ctx);
-           return EXIT_FAILURE);
-
-    ir_buffer_graph_dump(&ctx, ctx.ir_ctx->buffer);
-
-    IR_to_asm(&ctx);
-
-    ir_ctx_dtor(&ir_ctx);
+//     ir_ctx_t ir_ctx = {};
+//     ctx.ir_ctx = &ir_ctx;
+//
+//     ir_ctx_ctor(&ir_ctx, IR_BUFFER_INIT_CAPACITY);
+//
+//     //--------------------------------------------------------------------------
+//
+//     VERIFY(build_ir(&ctx),
+//            lang_ctx_dtor(&ctx);
+//            return EXIT_FAILURE);
+//
+//     ir_buffer_graph_dump(&ctx, ctx.ir_buf);
+//
+//     ir_to_asm(&ctx);
+//
+//     label_table_ctor(&ctx->label_table, 4);
+//     fixup_table_ctor(&ctx->fixups, 4);
+//
+//     // buf_ctor(ctx.);
+//
+//     ir_ctx_dtor(&ir_ctx);
 
     //-------------------------------------------------------------------//
 
