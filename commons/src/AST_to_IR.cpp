@@ -2,14 +2,14 @@
 
 #include "lang.h"
 #include "custom_assert.h"
-#include "IR.h"
+#include "ir.h"
 
 #define _DSL_DEFINE_
 #include "dsl.h"
 
 //==============================================================================
 
-lang_status_t build_IR(lang_ctx_t* ctx)
+lang_status_t build_ir(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
 
@@ -18,7 +18,7 @@ lang_status_t build_IR(lang_ctx_t* ctx)
     emit_global_label(ctx, "_start");
     emit_call        (ctx, "main");
 
-    operand_t return_val = operand_register(IR_REG_RAX);
+    operand_t return_val = operand_register(REG_RAX);
     operand_t exit_code  = operand_immersive(60);
 
     emit_mov(ctx, operand_register(IR_REG_RAX),

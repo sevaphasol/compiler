@@ -4,6 +4,8 @@
         "utility": "cpp",
         "array": "cpp",
         "functional": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "optional": "cpp",
+        "system_error": "cpp"
     }
 }

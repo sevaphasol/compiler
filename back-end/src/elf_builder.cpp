@@ -108,20 +108,3 @@ lang_status_t create_elf_file(const char* file_name, const uint8_t* code, size_t
 }
 
 //——————————————————————————————————————————————————————————————————————————————
-
-int main()
-{
-    const uint8_t code[] = {
-        0x48, 0xC7, 0xC0, 0x3C, 0x00, 0x00, 0x00, // mov rax, 60
-        0x48, 0x31, 0xFF,                         // xor rdi, rdi
-        0x0F, 0x05,                               // syscall
-    };
-
-    const size_t code_size = sizeof(code);
-
-    create_elf_file("out", code, code_size);
-
-    return 0;
-}
-
-//——————————————————————————————————————————————————————————————————————————————

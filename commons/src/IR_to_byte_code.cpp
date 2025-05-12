@@ -3,66 +3,41 @@
 #include "IR.h"
 #include "custom_assert.h"
 #include "x86_64_opcodes.h"
+#include "buffer.h"
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t byte_buffer_ctor(byte_code_ctx_t* ctx, size_t init_capacity)
+lang_status_t encode_instr(lang_ctx_t* ctx, ir_instr_t* ir_instr, encoded_instr_t* encoded_instr)
 {
     ASSERT(ctx);
-    ASSERT(init_capacity);
+    ASSERT(ir_instr);
+    ASSERT(encoded_instr);
 
-    //--------------------------------------------------------------------------
-
-    ctx->buffer = (char*) calloc(init_capacity, sizeof(char));
-    if (!ctx->buffer) {
-        return LANG_STD_ALLOCATE_ERROR;
-    }
-
-    ctx->buffer_capacity = init_capacity;
-    ctx->buffer_size     = 0;
-
-    //--------------------------------------------------------------------------
-
-    return LANG_SUCCESS;
+    return (*OpcodesTable[ir_instr->op].encode_func)(ctx, ir_instr, encoded_instr);
 }
 
 //==============================================================================
 
-lang_status_t byte_buferr_dtor(byte_code_ctx_t* ctx)
+lang_status_t emit_encoded_instr(buffer_t* bin_buf, const bin_instr_t* instr)
 {
-    ASSERT(ctx);
-
-    if (!ctx->buffer) {
-        return LANG_ERROR;
-    }
-
-    free(ctx->buffer);
-
-    return LANG_SUCCESS;
-}
-
-//==============================================================================
-
-lang_status_t buffer_append(byte_code_ctx_t* ctx, char* byte_code, size_t size)
-{
-    ASSERT(ctx);
-    ASSERT(byte_code);
+    ASSERT(bin_buf);
+    ASSERT(instr);
 
     //--------------------------------------------------------------------------
 
-    if (ctx->buffer_size >= ctx->buffer_capacity) {
-        ctx->buffer_capacity *= 2;
-        ctx->buffer = (char*) realloc(ctx->buffer, ctx->buffer_capacity * sizeof(char));
-    }
+    if (instr->info.has_rex)
+        buf_write(bin_buf, &instr->rex, sizeof(instr->rex));
 
-    if (!ctx->buffer) {
-        return LANG_STD_ALLOCATE_ERROR;
-    }
+    buf_write(bin_buf, &instr->opcode, instr->info.opcode_size);
 
-    //--------------------------------------------------------------------------
+    if (instr->info.has_modrm)
+        buf_write(bin_buf, &instr->modrm, sizeof(instr->modrm));
 
-    memcpy(ctx->buffer + ctx->buffer_size, byte_code, size);
-    ctx->buffer_size += size;
+    if (instr->info.has_disp)
+        buf_write(bin_buf, &instr->disp, instr->info.disp_size);
+
+    if (instr->info.has_imm)
+        buf_write(bin_buf, &instr->imm, instr->info.imm_size);
 
     //--------------------------------------------------------------------------
 
@@ -80,57 +55,10 @@ lang_status_t IR_to_byte_code(lang_ctx_t* ctx)
     size_t size = ctx->ir_ctx->buffer_size;
 
     for (size_t i = 0; i < size; i++) {
-        ir_instr_t instr = ctx->ir_ctx->buffer[i];
+        ir_instr_t ir_instr = ctx->ir_ctx->buffer[i];
         encoded_instr_t encoded_instr = {};
-        encode_instr(ctx, &instr, &encoded_instr);
+        encode_instr(ctx, &ir_instr, &encoded_instr);
         emit_encoded_instr(ctx, &encoded_instr);
-    }
-
-    //--------------------------------------------------------------------------
-
-    return LANG_SUCCESS;
-}
-
-//==============================================================================
-
-lang_status_t encode_instr(lang_ctx_t* ctx, ir_instr_t* ir_instr, encoded_instr_t* encoded_instr)
-{
-    ASSERT(ctx);
-    ASSERT(ir_instr);
-    ASSERT(encoded_instr);
-
-    return (*OpcodesTable[instr->op].encode_func)(ctx, instr, encoded_instr);
-}
-
-//==============================================================================
-
-lang_status_t emit_encoded_instr(lang_ctx_t* ctx, const encoded_instr_t* instr)
-{
-    ASSERT(ctx);
-    ASSERT(instr);
-
-    //--------------------------------------------------------------------------
-
-    byte_code_ctx_t* buffer = ctx->byte_code_ctx->buffer;
-
-    //--------------------------------------------------------------------------
-
-    if (instr->info.has_rex) {
-        buffer_append(buffer, (char*) &instr->rex, sizeof(instr->rex));
-    }
-
-    buffer_append(buffer, (char*) &instr->opcode, instr->info.opcode_size);
-
-    if (instr->info.has_modrm) {
-        buffer_append(buffer, (char*) &instr->modrm, sizeof(instr->modrm));
-    }
-
-    if (instr->info.has_disp) {
-        buffer_append(buffer, (char*) &instr->disp, instr->info.disp_size);
-    }
-
-    if (instr->info.has_imm) {
-        buffer_append(buffer, (char*) &instr->imm, instr->info.imm_size);
     }
 
     //--------------------------------------------------------------------------
@@ -153,6 +81,30 @@ uint8_t choose_optimal_disp(int32_t offset, uint8_t* mod)
 
 //==============================================================================
 
+modrm_t build_modrm(uint8_t rm, uint8_t reg, uint8_t mod)
+{
+    return (modrm_t) {
+        .mod = mod,
+        .reg = reg,
+        .rm  = rm
+    };
+}
+
+//==============================================================================
+
+rex_t build_rex(uint8_t w, uint8_t r, uint8_t b)
+{
+    return (rex_t) {
+        .prefix = 0b0100, // fixed constant
+        .w      = w,
+        .r      = r,
+        .x      = 0, // SIB is never used
+        .b      = b
+    };
+}
+
+//==============================================================================
+
 lang_status_t setup_rex_modrm_rr(encoded_instr_t* encoded_instr,
                                  ir_instr_t*      ir_instr)
 {
@@ -164,19 +116,8 @@ lang_status_t setup_rex_modrm_rr(encoded_instr_t* encoded_instr,
     reg_t dst = ir_instr->opd1.value.reg;
     reg_t src = ir_instr->opd2.value.reg;
 
-    encoded_instr->rex = {
-        .prefix = 0b0100,  // fixed constant
-        .w      = 1,       // always 64-bit operands
-        .r      = src > 7, // extension of reg
-        .x      = 0,       // SIB is never used
-        .b      = dst > 7  // extension of rm
-    };
-
-    encoded_instr->modrm = {
-        .mod = 0b11,        // register → register mode
-        .reg = src & 0b111,
-        .rm  = dst & 0b111
-    };
+    build_rex   (1,    src > 7,     dst > 7);
+    build_modrm (0b11, src & 0b111, dst & 0b111);
 
     //--------------------------------------------------------------------------
 
@@ -196,23 +137,10 @@ lang_status_t setup_rex_modrm_rm(encoded_instr_t* encoded_instr,
     reg_t dst  = ir_instr->opd1.value.reg;
     int   addr = ir_instr->opd2.value.addr;
 
-    encoded_instr->rex = {
-        .prefix = 0b0100,
-        .w      = 1,
-        .r      = dst > 7,
-        .x      = 0,
-        .b      = 0, // base_reg is always RBP — no need for extension
-    };
-
+    build_rex(1, dst > 7, 0);
     uint8_t mod = 0;
-
     encoded_instr->info.disp_size = choose_optimal_disp(addr, &mod);
-
-    encoded_instr->modrm = {
-        .mod = mod,
-        .reg = dst        & 0b111,
-        .rm  = IR_REG_RBP & 0b111,
-    };
+    build_modrm(mod, dst & 0b111, IR_REG_RBP & 0b111);
 
     encoded_instr->has_disp = true;
     encoded_instr->disp     = addr;
@@ -235,23 +163,10 @@ lang_status_t setup_rex_modrm_mr(encoded_instr_t* encoded_instr,
     int   addr = ir_instr->opd1.value.addr;
     reg_t dst  = ir_instr->opd2.value.reg;
 
-    encoded_instr->rex = {
-        .prefix = 0b0100,
-        .w      = 1,
-        .r      = dst > 7,
-        .x      = 0,
-        .b      = 0, // base_reg is always RBP — no need for extension
-    };
-
+    build_rex(1, dst > 7, 0);
     uint8_t mod = 0;
-
     encoded_instr->info.disp_size = choose_optimal_disp(addr, &mod);
-
-    encoded_instr->modrm = {
-        .mod = mod,
-        .reg = dst & 0b111,
-        .rm  = IR_REG_RBP & 0b111,
-    };
+    build_modrm(mod, dst & 0b111, IR_REG_RBP & 0b111);
 
     encoded_instr->has_disp = true;
     encoded_instr->disp     = addr;
@@ -274,19 +189,8 @@ lang_status_t setup_rex_modrm_ri(encoded_instr_t* encoded_instr,
     reg_t    dst = ir_instr->opd1.value.reg;
     number_t imm = ir_instr->opd2.value.imm;
 
-    encoded_instr->rex = {
-        .prefix = 0b0100,
-        .w      = 1,
-        .r      = 0, // No source register
-        .x      = 0,
-        .b      = dst > 7, //
-    };
-
-    encoded_instr->modrm = {
-        .mod = 0b11, // immediate → register mode
-        .reg = 0,    // will be inited by caller
-        .rm  = dst & 0b111,
-    };
+    build_rex(1, 0, dst > 7);
+    build_modrm(0b11, 0, dst & 0b111);
 
     encoded_instr->has_imm  = true;
     encoded_instr->imm      = imm;
@@ -309,23 +213,10 @@ lang_status_t setup_rex_modrm_mi(encoded_instr_t* encoded_instr, ir_instr_t* ir_
     int32_t  dst = ir_instr->opd1.value.addr;
     number_t imm = ir_instr->opd2.value.imm;
 
-    encoded_instr->rex = {
-        .prefix = 0b0100,
-        .w      = 1,
-        .r      = 0, // No registers
-        .x      = 0,
-        .b      = 0, // base_reg = RBP
-    };
-
+    build_rex(1, 0, 0);
     uint8_t mod = 0;
-
     encoded_instr->info.disp_size = choose_optimal_disp(addr, &mod);
-
-    encoded_instr->modrm = {
-        .mod = 0b10,
-        .reg = 0, // will be inited by caller
-        .rm  = IR_REG_RBP & 0b111,
-    };
+    build_modrm(0b10, 0, IR_REG_RBP & 0b111);
 
     encoded_instr->has_disp = true;
     encoded_instr->disp     = addr;

@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include "buffer.h"
+#include "lang_status.h"
+
 //———————————————————————————————————————————————————————————————————//
 
 const int MaxStrLength = 100;
@@ -18,93 +21,6 @@ const char* const BackendDefaultOutput  = "../examples/factorial_backend.asm";
 
 const char* const ReverseFrontendDefaultInput  = "../examples/factorial_frontend.txt";
 const char* const ReverseFrontendDefaultOutput = "factorial_source.txt";
-
-//———————————————————————————————————————————————————————————————————//
-
-enum lang_status_t
-{
-    LANG_SUCCESS                         = 0,
-    LANG_ERROR                           = 1,
-    LANG_READ_CODE_ERROR                 = 2,
-    LANG_PARSE_ARGV_ERROR                = 3,
-    LANG_FILE_OPEN_ERROR                 = 4,
-    LANG_GET_FILE_SIZE_ERROR             = 5,
-    LANG_STD_ALLOCATE_ERROR              = 6,
-    LANG_FREAD_ERROR                     = 7,
-    LANG_FCLOSE_ERROR                    = 8,
-    LANG_NODE_ALLOCATOR_CTOR_ERROR       = 9,
-    LANG_TOKENIZER_CTX_CTOR_ERROR        = 10,
-    LANG_SYNTAX_ERROR                    = 11,
-    LANG_OPEN_FILES_ERROR                = 12,
-    LANG_GET_TOKEN_ERROR                 = 13,
-    LANG_NODE_ALLOCATOR_DTOR_ERROR       = 14,
-    LANG_PRINT_NODE_VALUE_ERROR          = 15,
-    LANG_TREE_OUTPUT_ERROR               = 16,
-    LANG_PUT_NODE_VALUE_ERROR            = 17,
-    LANG_UNKNOWN_TYPE_ERROR              = 18,
-    LANG_READ_LEFT_NODE_ERROR            = 19,
-    LANG_READ_RIGHT_NODE_ERROR           = 20,
-    LANG_INCORRECT_INPUT_SYNTAX_ERROR    = 21,
-    LANG_ASM_NODE_ERROR                  = 22,
-    LANG_UNKNOWN_OPERATOR_ERROR          = 23,
-    LANG_GET_STR_NODE_ERROR              = 24,
-    LANG_GET_DECLARATION_ERROR           = 25,
-    LANG_GET_GLOBAL_STATEMENT_ERROR      = 26,
-    LANG_GET_FUNC_PARAMS_ERROR           = 27,
-    LANG_GET_BODY_ERROR                  = 28,
-    LANG_GET_EXPRESSION_ERROR            = 29,
-    LANG_GET_STATEMENT_ERROR             = 30,
-    LANG_GET_STANDART_FUNC_ERROR         = 31,
-    LANG_GET_ASSIGNMENT_ERROR            = 32,
-    LANG_GET_IF_ERROR                    = 33,
-    LANG_GET_RETURN_ERROR                = 34,
-    LANG_GET_FUNC_ERROR                  = 35,
-    LANG_GET_SCAN_ERROR                  = 36,
-    LANG_GET_VAR_DECLARATION_ERROR       = 37,
-    LANG_GET_CALL_ERROR                  = 38,
-    LANG_GET_MUL_DIV_EXPRESSION_ERROR    = 39,
-    LANG_GET_MUL_DIV_EXPRESSION          = 40,
-    LANG_GET_SINGLE_EXPRESSION_ERROR     = 41,
-    LANG_NODES_OVERFLOW_ERROR            = 42,
-    LANG_GET_IN_PARENT_EXPRESSION_ERROR  = 43,
-    LANG_GET_FUNC_USE_PARAMS_ERROR       = 44,
-    LANG_GET_FUNC_DECLARATION_ERROR      = 45,
-    LANG_GET_VAR_DECLARATION             = 46,
-    LANG_ID_STACK_OVERFLOW_ERROR         = 47,
-    LANG_ID_STACK_UNDERFLOW_ERROR        = 48,
-    LANG_POP_LOCALES_ERROR               = 49,
-    LANG_REDECLARATION_ERROR             = 50,
-    LANG_NOT_INIT_ERROR                  = 51,
-    LANG_PUSH_NEW_ID_COUNTER_ERROR       = 52,
-    LANG_ID_COUNTER_STACK_OVERFLOW_ERROR = 53,
-    LANG_ADD_NEW_ID_ERROR                = 54,
-    LANG_ASM_NEW_VAR_ERROR               = 55,
-    LANG_GET_HLT_ERROR                   = 56,
-    LANG_OP_SOURCE_CODE_ERROR            = 57,
-    LANG_SOURCE_CODE_ERROR               = 58,
-    LANG_BINARY_OP_SOURCE_ERROR          = 59,
-    LANG_UNARY_OP_SOURCE_ERROR           = 60,
-    LANG_SEQ_OP_SOURCE_ERROR             = 61,
-    LANG_OP_WITH_BODY_SOURCE_ERROR       = 62,
-    LANG_ZEROARY_OP_SOURCE_ERROR         = 63,
-    LANG_CALL_OP_SOURCE_ERROR            = 64,
-    LANG_NEW_FUNC_SOURCE_ERROR           = 65,
-    LANG_SRC_NODE_ERROR                  = 66,
-    LANG_SRC_BINARY_OP_ERROR             = 67,
-    LANG_SRC_UNARY_OP_ERROR              = 68,
-    LANG_SRC_NEW_FUNC_ERROR              = 69,
-    LANG_SRC_STATEMENT_ERROR             = 70,
-    LANG_SRC_COND_ERROR                  = 71,
-    LANG_SRC_RET_ERROR                   = 72,
-    LANG_SRC_PARAM_LINKER_ERROR          = 73,
-    LANG_SRC_NEW_VAR_ERROR               = 74,
-    LANG_SRC_IN_ERROR                    = 75,
-    LANG_SRC_OUT_ERROR                   = 76,
-    LANG_SRC_CALL_ERROR                  = 77,
-    LANG_SIMPLIFY_OPR_CODE_ERROR         = 78,
-    LANG_NOT_CONSTANT_STATUS             = 79,
-    LANG_TRY_CALC_ERROR                  = 80,
-};
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -314,16 +230,7 @@ struct name_table_t
 
 struct node_allocator_t;
 
-struct byte_code_ctx_t
-{
-    char* buffer;
-    size_t buffer_size;
-    size_t buffer_capacity;
-};
-
 //———————————————————————————————————————————————————————————————————//
-
-struct ir_ctx_t;
 
 struct lang_ctx_t
 {
@@ -350,8 +257,8 @@ struct lang_ctx_t
     size_t            n_globals;
     size_t            n_locals;
 
-    ir_ctx_t*         ir_ctx;
-    byte_code_ctx_t*  byte_code_ctx;
+    buffer_t*         ir_buf;
+    buffer_t*         bin_buf;
 };
 
 //———————————————————————————————————————————————————————————————————//

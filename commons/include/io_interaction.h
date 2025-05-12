@@ -3,8 +3,7 @@
 
 //———————————————————————————————————————————————————————————————————//
 
-enum io_status_t
-{
+enum io_status_t {
     IO_SUCCESS             = 0,
     IO_PARSE_ARGV_ERROR    = 1,
     IO_GET_FILE_SIZE_ERROR = 2,

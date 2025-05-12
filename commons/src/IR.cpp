@@ -1,210 +1,137 @@
-#include "IR.h"
+#include "ir.h"
 #include "custom_assert.h"
 
 //—————————————————————————————————————————————————————————————————————————————
 
-lang_status_t ir_ctx_ctor(ir_ctx_t* ctx, size_t init_capacity)
+lang_status_t ir_emit_instr(buffer_t* ir_buf, ir_instr_t ir_instr)
 {
-    ASSERT(ctx);
+    return buf_write(ir_buf, ir_instr, sizeof(ir_instr_t));
+}
 
-    //--------------------------------------------------------------------------
+//——————————————————————————————————————————————————————————————————————————————
 
-    ctx->buffer = (ir_instr_t*) calloc(init_capacity, sizeof(ir_instr_t));
-
-    if (!ctx->buffer) {
-        return LANG_STD_ALLOCATE_ERROR;
-    }
-
-    ctx->buffer_capacity = init_capacity;
-    ctx->buffer_size = 0;
-
-    //--------------------------------------------------------------------------
-
-    return LANG_SUCCESS;
+ir_opd_t opd_reg(reg_t reg)
+{
+    return (ir_opd_t) {.type  = IR_OPD_REGISTER, .value = {.reg = reg}};
 }
 
 //==============================================================================
 
-lang_status_t ir_ctx_dtor(ir_ctx_t* ctx)
+ir_opd_t opd_mem(int32_t offset)
 {
-    ASSERT(ctx);
-
-    //--------------------------------------------------------------------------
-
-    if (!ctx->buffer) {
-        return LANG_ERROR;
-    }
-
-    free(ctx->buffer);
-
-    //--------------------------------------------------------------------------
-
-    return LANG_SUCCESS;
+    return (ir_opd_t) {.type  = IR_OPD_MEMORY, .value = {.offset = offset}};
 }
 
 //==============================================================================
 
-lang_status_t ir_emit_operation(ir_ctx_t* ctx, ir_instr_t instr)
+ir_opd_t opd_imm(float imm)
 {
-    ASSERT(ctx);
-
-    //--------------------------------------------------------------------------
-
-    if (ctx->buffer_size >= ctx->buffer_capacity) {
-        ctx->buffer_capacity *= 2;
-        ctx->buffer = (ir_instr_t*) realloc(ctx->buffer,
-                                            ctx->buffer_capacity *
-                                            sizeof(ir_instr_t));
-    }
-
-    if (!ctx->buffer) {
-        return LANG_ERROR;
-    }
-
-    ctx->buffer[ctx->buffer_size++] = instr;
-
-    //--------------------------------------------------------------------------
-
-    return LANG_SUCCESS;
+    return (ir_opd_t) {.type  = IR_OPD_IMMERSIVE, .value = {.imm = imm}};
 }
 
 //==============================================================================
 
-operand_t operand_register(reg_t reg)
+ir_opd_t opd_global_label(const char* global_label_name)
 {
-    return (operand_t) {.type  = IR_OPERAND_REGISTER,
-                        .value = {.reg = reg}};
+    return (ir_opd_t) {.type  = IR_OPD_GLOBAL_LABEL,
+                       .value = {.global_label_name = global_label_name}};
 }
 
 //==============================================================================
 
-operand_t operand_memory(int addr)
+ir_opd_t operand_local_label(uint64_t local_label_number)
 {
-    return (operand_t) {.type  = IR_OPERAND_MEMORY,
-                        .value = {.addr = addr}};
+    return (ir_opd_t) {.type  = IR_OPD_LOCAL_LABEL,
+                       .value = {.local_label_number = local_label_number}};
 }
 
 //==============================================================================
 
-operand_t operand_immersive(int64_t imm)
+lang_status_t emit_nop(buffer_t* ir_buf)
 {
-    return (operand_t) {.type  = IR_OPERAND_IMMERSIVE,
-                        .value = {.imm = imm}};
+    return ir_emit_instr(ir_buf, {IR_OPC_NOP, {}, {}});
 }
 
 //==============================================================================
 
-operand_t operand_global_label(const char* name)
+lang_status_t emit_binary_operation(buffer_t* ir_buf, ir_opc_t opc, ir_opd_t opd1, ir_opd_t opd2)
 {
-    return (operand_t) {.type  = IR_OPERAND_GLOBAL_LABEL,
-                        .value = {.name = name}};
-}
+    ir_opc_t opc = IR_OPC_NOP;
 
-//==============================================================================
-
-operand_t operand_local_label(uint64_t label_number)
-{
-    return (operand_t) {.type  = IR_OPERAND_LOCAL_LABEL,
-                        .value = {.label_number = label_number}};
-}
-
-//==============================================================================
-
-lang_status_t emit_nop(lang_ctx_t* ctx)
-{
-    return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_NOP, {}, {}});
-}
-
-//==============================================================================
-
-lang_status_t emit_binary_operation(lang_ctx_t* ctx,
-                                    operator_code_t opcode,
-                                    operand_t opd1,
-                                    operand_t opd2)
-{
-    opcode_t IR_opcode = IR_OPCODE_NOP;
-
-    switch (opcode) {
-        case ADD: {
-            IR_opcode = IR_OPCODE_ADD;
+    switch (opc) {
+        case ADD:
+            opc = IR_OPC_ADD;
             break;
-        }
-        case SUB: {
-            IR_opcode = IR_OPCODE_SUB;
+        case SUB:
+            opc = IR_OPC_SUB;
             break;
-        }
-        case MUL: {
-            IR_opcode = IR_OPCODE_MUL;
+        case MUL:
+            opc = IR_OPC_MUL;
             break;
-        }
-        case DIV: {
-            IR_opcode = IR_OPCODE_DIV;
+        case DIV:
+            opc = IR_OPC_DIV;
             break;
-        }
-        default: {
+        default:
             return LANG_ERROR;
-        }
     }
 
-    return ir_emit_operation(ctx->ir_ctx,
-                             {IR_opcode, opd1, opd2});
+    return ir_emit_instr(ir_buf, {IR_OPC, opd1, opd2});
 }
 
 //==============================================================================
 
-lang_status_t emit_add(lang_ctx_t* ctx, operand_t opd1, operand_t opd2)
+lang_status_t emit_add(lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_ADD, opd1, opd2});
+                             {IR_OPC_ADD, opd1, opd2});
 }
 
 //==============================================================================
 
-lang_status_t emit_sub(lang_ctx_t* ctx, operand_t opd1, operand_t opd2)
+lang_status_t emit_sub(lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_SUB, opd1, opd2});
+                             {IR_OPC_SUB, opd1, opd2});
 }
 
 //==============================================================================
 
-lang_status_t emit_mul(lang_ctx_t* ctx, operand_t opd1, operand_t opd2)
+lang_status_t emit_mul(lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_MUL, opd1, opd2});
+                             {IR_OPC_MUL, opd1, opd2});
 }
 
 //==============================================================================
 
-lang_status_t emit_div(lang_ctx_t* ctx, operand_t opd1, operand_t opd2)
+lang_status_t emit_div(lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_DIV, opd1, opd2});
+                             {IR_OPC_DIV, opd1, opd2});
 }
 
 //==============================================================================
 
-lang_status_t emit_mov(lang_ctx_t* ctx, operand_t dst, operand_t src)
+lang_status_t emit_mov(lang_ctx_t* ctx, ir_opd_t dst, ir_opd_t src)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_MOV, dst, src});
+                             {IR_OPC_MOV, dst, src});
 }
 
 //==============================================================================
 
-lang_status_t emit_push(lang_ctx_t* ctx, operand_t src)
+lang_status_t emit_push(lang_ctx_t* ctx, ir_opd_t src)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_PUSH, src, {}});
+                             {IR_OPC_PUSH, src, {}});
 }
 
 //==============================================================================
 
-lang_status_t emit_pop(lang_ctx_t* ctx, operand_t dst)
+lang_status_t emit_pop(lang_ctx_t* ctx, ir_opd_t dst)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_POP, dst, {}});
+                             {IR_OPC_POP, dst, {}});
 }
 
 //==============================================================================
@@ -212,7 +139,7 @@ lang_status_t emit_pop(lang_ctx_t* ctx, operand_t dst)
 lang_status_t emit_call(lang_ctx_t* ctx, const char* name)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_CALL, operand_global_label(name), {}});
+                             {IR_OPC_CALL, operand_global_label(name), {}});
 }
 
 //==============================================================================
@@ -220,7 +147,7 @@ lang_status_t emit_call(lang_ctx_t* ctx, const char* name)
 lang_status_t emit_ret(lang_ctx_t* ctx)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_RET, {}, {}});
+                             {IR_OPC_RET, {}, {}});
 }
 
 //==============================================================================
@@ -228,7 +155,7 @@ lang_status_t emit_ret(lang_ctx_t* ctx)
 lang_status_t emit_syscall(lang_ctx_t* ctx)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_SYSCALL, {}, {}});
+                             {IR_OPC_SYSCALL, {}, {}});
 }
 
 //==============================================================================
@@ -236,7 +163,7 @@ lang_status_t emit_syscall(lang_ctx_t* ctx)
 lang_status_t emit_global_label(lang_ctx_t* ctx, const char* name)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_GLOBAL_LABEL, operand_global_label(name), {}});
+                             {IR_OPC_GLOBAL_LABEL, operand_global_label(name), {}});
 }
 
 //==============================================================================
@@ -244,7 +171,7 @@ lang_status_t emit_global_label(lang_ctx_t* ctx, const char* name)
 lang_status_t emit_local_label(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_LOCAL_LABEL, operand_local_label(label_number), {}});
+                             {IR_OPC_LOCAL_LABEL, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
@@ -252,7 +179,7 @@ lang_status_t emit_local_label(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_jmp(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JMP, operand_local_label(label_number), {}});
+                             {IR_OPC_JMP, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
@@ -260,7 +187,7 @@ lang_status_t emit_jmp(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_je(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JE, operand_local_label(label_number), {}});
+                             {IR_OPC_JE, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
@@ -268,15 +195,15 @@ lang_status_t emit_je(lang_ctx_t* ctx, int64_t label_number)
 lang_status_t emit_jne(lang_ctx_t* ctx, int64_t label_number)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_JNE, operand_local_label(label_number), {}});
+                             {IR_OPC_JNE, operand_local_label(label_number), {}});
 }
 
 //==============================================================================
 
-lang_status_t emit_test(lang_ctx_t* ctx, operand_t opd1, operand_t opd2)
+lang_status_t emit_test(lang_ctx_t* ctx, ir_opd_t opd1, ir_opd_t opd2)
 {
     return ir_emit_operation(ctx->ir_ctx,
-                             {IR_OPCODE_TEST, opd1, opd2});
+                             {IR_OPC_TEST, opd1, opd2});
 }
 
 //==============================================================================
