@@ -13,7 +13,7 @@ enum ir_opd_type_t {
     IR_OPD_NAN          = 0,
     IR_OPD_REGISTER     = 1,
     IR_OPD_MEMORY       = 2,
-    IR_OPD_IMMERSIVE    = 3,
+    IR_OPD_IMMEDIATE    = 3,
     IR_OPD_GLOBAL_LABEL = 4,
     IR_OPD_LOCAL_LABEL  = 5,
 };
@@ -23,7 +23,7 @@ enum ir_opd_type_t {
 union ir_opd_value_t {
     reg_t       reg;
     int32_t     offset;
-    float       imm;
+    int         imm;
     const char* global_label_name;
     size_t      local_label_number;
 };

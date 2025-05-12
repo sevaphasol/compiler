@@ -77,7 +77,7 @@ struct operator_t
     size_t          len;
     const char*     asm_name;
     int             n_children;
-    lang_status_t   (*to_IR_func) (lang_ctx_t* ctx, node_t* cur_node);
+    lang_status_t   (*to_ir_func) (lang_ctx_t* ctx, node_t* cur_node);
     lang_status_t   (*src_func)   (lang_ctx_t* ctx, node_t* cur_node);
 };
 
@@ -119,7 +119,7 @@ lang_status_t src_hlt               (lang_ctx_t* ctx, node_t* cur_node);
 #define STR_AND_LEN(str) str, sizeof(str) / sizeof(char)
 
 const operator_t OperatorsTable[] =
-{ // code           name and len              asm_name    n_childs       to_IR_func                src_func
+{ // code           name and len              asm_name    n_childs       to_ir_func                src_func
     {UNDEFINED,     nullptr, 0,               nullptr,       0,          nullptr                 , nullptr,           },
     {ADD,           STR_AND_LEN("+"),         "add",         2,          &binary_operation_to_IR , &src_binary_op,    },
     {SUB,           STR_AND_LEN("-"),         "sub",         2,          &binary_operation_to_IR , &src_binary_op,    },
@@ -185,7 +185,7 @@ struct name_t
 
 //———————————————————————————————————————————————————————————————————//
 
-typedef int64_t number_t;
+typedef int number_t;
 
 //———————————————————————————————————————————————————————————————————//
 
