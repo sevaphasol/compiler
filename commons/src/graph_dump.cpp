@@ -100,7 +100,7 @@ tree_dump_status_t make_dot_opd(FILE* file, ir_opd_t* opd)
 
 //==============================================================================
 
-tree_dump_status_t  make_ir_elem(lang_ctx_t* ctx, ir_instr_t* instr, FILE* file)
+tree_dump_status_t make_ir_elem(lang_ctx_t* ctx, ir_instr_t* instr, FILE* file)
 {
     ASSERT(ctx);
     ASSERT(instr);
@@ -148,7 +148,7 @@ tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx,
 
     dot_file_init(dot_file);
 
-    size_t buffer_size = ctx->ir_buf.size;
+    size_t buffer_size = ctx->ir_buf.size / sizeof(ir_instr_t);
 
     ir_instr_t* ir_buf = (ir_instr_t*) ctx->ir_buf.data;
 

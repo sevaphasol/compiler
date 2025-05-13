@@ -15,7 +15,7 @@ lang_status_t ir_to_asm(lang_ctx_t* ctx)
     RAW_ASM("section .text\n");
     RAW_ASM("global _start\n\n");
 
-    size_t size = ctx->ir_buf.size;
+    size_t size = ctx->ir_buf.size / sizeof(ir_instr_t);
 
     ir_instr_t* ir_buf = (ir_instr_t*) ctx->ir_buf.data;
 

@@ -63,11 +63,11 @@ typedef lang_status_t (*encode_func_t)(lang_ctx_t*  ctx,
 
 const encode_func_t IrOpEncodeFuncsTable[] = {
     [IR_OPC_NOP]          = encode_nop,
-    [IR_OPC_ADD]          = encode_two_operand_instr,
-    [IR_OPC_SUB]          = encode_two_operand_instr,
+    [IR_OPC_ADD]          = encode_add,
+    [IR_OPC_SUB]          = encode_sub,
     [IR_OPC_MUL]          = encode_mul,
     [IR_OPC_DIV]          = encode_div,
-    [IR_OPC_MOV]          = encode_two_operand_instr,
+    [IR_OPC_MOV]          = encode_mov,
     [IR_OPC_PUSH]         = encode_push,
     [IR_OPC_POP]          = encode_pop,
     [IR_OPC_CALL]         = encode_call,
@@ -76,7 +76,7 @@ const encode_func_t IrOpEncodeFuncsTable[] = {
     [IR_OPC_JMP]          = encode_jmp,
     [IR_OPC_JE]           = encode_je,
     [IR_OPC_JNE]          = encode_jne,
-    [IR_OPC_TEST]         = encode_two_operand_instr,
+    [IR_OPC_TEST]         = encode_test,
     [IR_OPC_LOCAL_LABEL]  = encode_local_label,
     [IR_OPC_GLOBAL_LABEL] = encode_global_label,
 };

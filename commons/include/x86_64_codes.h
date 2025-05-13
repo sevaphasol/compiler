@@ -43,7 +43,7 @@ enum x86_64_opcode_t {
     X86_64_MOV_RR_OPCODE        = 0x89,
     X86_64_MOV_RM_OPCODE        = 0x8b,
     X86_64_MOV_MR_OPCODE        = 0x89,
-    X86_64_MOV_RI_OPCODE        = 0x34,
+    X86_64_MOV_RI_OPCODE        = 0xb8,
     X86_64_MOV_MI_OPCODE        = 0xc7,
 
     X86_64_TEST_RR_OPCODE       = 0x85,

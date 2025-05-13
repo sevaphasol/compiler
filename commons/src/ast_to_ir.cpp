@@ -321,7 +321,9 @@ lang_status_t new_func_to_ir(lang_ctx_t* ctx,
 
     //--------------------------------------------------------------------------
 
-    size_t sub_rsp_position = ctx->ir_buf.size++;
+    size_t sub_rsp_position = ctx->ir_buf.size;
+
+    ctx->ir_buf.size += sizeof(ir_instr_t);
 
     if (func_params) {
         receiving_func_params_to_ir(ctx, func_params, func_id.n_params);

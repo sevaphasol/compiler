@@ -54,7 +54,7 @@ lang_status_t ir_to_binary(lang_ctx_t* ctx)
 
     //--------------------------------------------------------------------------
 
-    size_t size = ctx->ir_buf.size;
+    size_t size = ctx->ir_buf.size / sizeof(ir_instr_t);
     ir_instr_t* ir_buf = (ir_instr_t*) ctx->ir_buf.data;
 
     for (size_t i = 0; i < size; i++) {
@@ -62,7 +62,10 @@ lang_status_t ir_to_binary(lang_ctx_t* ctx)
         bin_instr_t bin_instr = {};
         bin_instr.info.opcode_size = 1;
         encode_instr(ctx, &ir_instr, &bin_instr);
-        emit_bin_instr(&ctx->bin_buf, &bin_instr);
+        if (ir_instr.opc != IR_OPC_GLOBAL_LABEL &&
+            ir_instr.opc != IR_OPC_LOCAL_LABEL) {
+            emit_bin_instr(&ctx->bin_buf, &bin_instr);
+        }
     }
 
     fixup_table_apply(&ctx->fixups, &ctx->label_table, &ctx->ir_buf);
@@ -87,7 +90,7 @@ uint8_t choose_optimal_disp(int32_t offset, uint8_t* mod)
 
 //==============================================================================
 
-modrm_t build_modrm(uint8_t rm, uint8_t reg, uint8_t mod)
+modrm_t build_modrm(uint8_t mod, uint8_t reg, uint8_t rm)
 {
     return (modrm_t) {
         .rm  = rm,
@@ -124,6 +127,9 @@ lang_status_t build_rex_modrm_rr(bin_instr_t* bin_instr, ir_instr_t* ir_instr, u
     bin_instr->rex   = build_rex   (1,    src > 7,     dst > 7);
     bin_instr->modrm = build_modrm (0b11, src & 0b111, dst & 0b111);
 
+    bin_instr->info.has_rex   = true;
+    bin_instr->info.has_modrm = true;
+
     //--------------------------------------------------------------------------
 
     return LANG_SUCCESS;
@@ -146,6 +152,9 @@ lang_status_t build_rex_modrm_rm(bin_instr_t* bin_instr, ir_instr_t* ir_instr, u
 
     bin_instr->rex   = build_rex  (1,   dst > 7,     0);
     bin_instr->modrm = build_modrm(mod, dst & 0b111, REG_RBP & 0b111);
+
+    bin_instr->info.has_rex   = true;
+    bin_instr->info.has_modrm = true;
 
     bin_instr->info.has_disp = true;
     bin_instr->disp     = offset;
@@ -173,6 +182,9 @@ lang_status_t build_rex_modrm_mr(bin_instr_t* bin_instr, ir_instr_t* ir_instr, u
     bin_instr->rex   = build_rex  (1,   dst > 7,     0);
     bin_instr->modrm = build_modrm(mod, dst & 0b111, REG_RBP & 0b111);
 
+    bin_instr->info.has_rex   = true;
+    bin_instr->info.has_modrm = true;
+
     bin_instr->info.has_disp = true;
     bin_instr->disp     = offset;
 
@@ -195,6 +207,9 @@ lang_status_t build_rex_modrm_ri(bin_instr_t* bin_instr, ir_instr_t* ir_instr, u
 
     bin_instr->rex   = build_rex  (1,    0,         dst > 7);
     bin_instr->modrm = build_modrm(0b11, modrm_reg, dst & 0b111);
+
+    bin_instr->info.has_rex   = true;
+    bin_instr->info.has_modrm = true;
 
     bin_instr->info.has_imm  = true;
     bin_instr->imm      = imm;
@@ -222,6 +237,9 @@ lang_status_t build_rex_modrm_mi(bin_instr_t* bin_instr, ir_instr_t* ir_instr, u
 
     bin_instr->rex   = build_rex  (1,    0,         0);
     bin_instr->modrm = build_modrm(0b10, modrm_reg, REG_RBP & 0b111);
+
+    bin_instr->info.has_rex   = true;
+    bin_instr->info.has_modrm = true;
 
     bin_instr->info.has_disp = true;
     bin_instr->disp     = offset;
@@ -345,6 +363,74 @@ lang_status_t encode_two_operand_instr(lang_ctx_t* ctx, ir_instr_t* ir_instr, bi
 
 //==============================================================================
 
+lang_status_t encode_mov(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    //--------------------------------------------------------------------------
+    ir_instr_type_t ir_instr_type = get_ir_instr_type(ir_instr);
+    uint16_t opc;
+    uint8_t modrm_reg;
+
+    set_opc_and_modrm_reg(ir_instr->opc, ir_instr_type, &opc, &modrm_reg);
+
+    bin_instr->opc = opc;
+    //--------------------------------------------------------------------------
+
+    switch (ir_instr_type) {
+        case IR_INSTR_TYPE_REG_REG:
+            build_rex_modrm_rr(bin_instr, ir_instr, modrm_reg);
+            break;
+
+        case IR_INSTR_TYPE_REG_MEM:
+            build_rex_modrm_rm(bin_instr, ir_instr, modrm_reg);
+            break;
+
+        case IR_INSTR_TYPE_MEM_REG:
+            build_rex_modrm_mr(bin_instr, ir_instr, modrm_reg);
+            break;
+
+        case IR_INSTR_TYPE_REG_IMM: {
+            reg_t dst = ir_instr->opd1.value.reg;
+
+            if (dst <= REG_RDI) {
+                bin_instr->opc = 0xB8 + (dst & 0b111);
+                bin_instr->rex = build_rex(1, 0, dst > 7);
+                bin_instr->info.has_rex = true;
+
+                bin_instr->info.has_imm = true;
+                bin_instr->info.imm_size = 8;
+                bin_instr->imm = ir_instr->opd2.value.imm;
+            } else {
+                bin_instr->rex = build_rex(1, 0, 1);
+                bin_instr->info.has_rex = true;
+                bin_instr->opc = 0xC7;
+                bin_instr->modrm = build_modrm(0b11, 0, dst & 0b111);
+                bin_instr->info.has_modrm = true;
+
+                bin_instr->info.has_imm = true;
+                bin_instr->info.imm_size = 8;
+                bin_instr->imm = ir_instr->opd2.value.imm;
+            }
+            break;
+        }
+
+        case IR_INSTR_TYPE_MEM_IMM:
+            build_rex_modrm_mi(bin_instr, ir_instr, modrm_reg);
+            break;
+
+        default:
+            return LANG_ERROR;
+    }
+
+    //--------------------------------------------------------------------------
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
 lang_status_t encode_nop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
@@ -354,6 +440,34 @@ lang_status_t encode_nop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
     //--------------------------------------------------------------------------
 
     bin_instr->opc = X86_64_NOP;
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t encode_add(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    //--------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+lang_status_t encode_sub(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    //--------------------------------------------------------------------------
 
     //--------------------------------------------------------------------------
 
@@ -405,7 +519,7 @@ lang_status_t encode_push(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bi
             uint8_t opc = X86_64_PUSH_R_OPCODE;
             reg_t   reg = ir_instr->opd1.value.reg;
 
-            if (reg & 0b111 != 0) {
+            if (reg >= REG_R8) {
                 bin_instr->rex = build_rex(1, 0, 1);
                 bin_instr->info.has_rex = true;
             }
@@ -452,7 +566,7 @@ lang_status_t encode_pop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
             uint8_t opc = X86_64_POP_R_OPCODE;
             reg_t   reg = ir_instr->opd1.value.reg;
 
-            if (reg & 0b111 != 0) {
+            if (reg >= REG_R8) {
                 bin_instr->rex = build_rex(1, 0, 1);
                 bin_instr->info.has_rex = true;
             }
@@ -597,6 +711,21 @@ lang_status_t encode_jne(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
 
     return encode_jumps(ctx, ir_instr, bin_instr, opc);
 
+}
+
+//==============================================================================
+
+lang_status_t encode_test(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    //--------------------------------------------------------------------------
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
 }
 
 //==============================================================================

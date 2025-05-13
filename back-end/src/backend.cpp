@@ -9,6 +9,8 @@
 #include "node_allocator.h"
 #include "io_interaction.h"
 #include "ir.h"
+#include "fixup_table.h"
+#include "elf_builder.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -64,12 +66,24 @@ int main(int argc, const char* argv[])
 
     ir_buffer_graph_dump(&ctx, (ir_instr_t*) &ctx.ir_buf.data);
 
-    // ir_to_asm(&ctx);
+    ir_to_asm(&ctx);
 
-    // label_table_ctor(&ctx->label_table, 4);
-    // fixup_table_ctor(&ctx->fixups, 4);
+    //--------------------------------------------------------------------------
 
-    // buf_ctor(ctx.);
+    buf_ctor(&ctx.bin_buf, 4096);
+
+    label_table_ctor(&ctx.label_table, 10);
+    fixup_table_ctor(&ctx.fixups, 10);
+    label_table_dtor(&ctx.label_table);
+    fixup_table_dtor(&ctx.fixups);
+
+    ir_to_binary(&ctx);
+
+    //--------------------------------------------------------------------------
+
+    create_elf_file("out", ctx.bin_buf.data, ctx.bin_buf.size);
+
+    //--------------------------------------------------------------------------
 
     buf_dtor(&ctx.ir_buf);
 

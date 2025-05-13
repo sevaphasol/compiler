@@ -60,12 +60,14 @@ struct fixup_table_t {
 //——————————————————————————————————————————————————————————————————————————————
 
 lang_status_t label_table_ctor(label_table_t* table, size_t init_capacity);
+lang_status_t label_table_dtor(label_table_t* table);
 lang_status_t label_table_add_global(label_table_t* table, const char* name, size_t address);
 lang_status_t label_table_add_local(label_table_t* table, size_t number, size_t address);
 lang_status_t label_table_find_global(label_table_t* table, const char* name, uint32_t* offset);
 lang_status_t label_table_find_local(label_table_t* table, size_t number, uint32_t* offset);
 
 lang_status_t fixup_table_ctor(fixup_table_t* table, size_t init_capacity);
+lang_status_t fixup_table_dtor(fixup_table_t* fixups);
 lang_status_t add_fixup(fixup_table_t* table, const char* global_name, size_t local_number, uint32_t offset);
 lang_status_t fixup_table_apply(fixup_table_t* table, label_table_t* label_table, buffer_t* code_buf);
 
