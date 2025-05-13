@@ -5,6 +5,11 @@
 
 //——————————————————————————————————————————————————————————————————————————————
 
+#define REX_R_UNUSED 0
+#define REX_B_UNUSED 0
+
+//——————————————————————————————————————————————————————————————————————————————
+
 enum reg_t {
     REG_RAX = 0,  REG_RCX = 1,  REG_RDX = 2,  REG_RBX = 3,
     REG_RSP = 4,  REG_RBP = 5,  REG_RSI = 6,  REG_RDI = 7,
@@ -43,7 +48,7 @@ enum x86_64_opcode_t {
     X86_64_MOV_RR_OPCODE        = 0x89,
     X86_64_MOV_RM_OPCODE        = 0x8b,
     X86_64_MOV_MR_OPCODE        = 0x89,
-    X86_64_MOV_RI_OPCODE        = 0xb8,
+    X86_64_MOV_RI_OPCODE        = 0xc7,
     X86_64_MOV_MI_OPCODE        = 0xc7,
 
     X86_64_TEST_RR_OPCODE       = 0x85,
@@ -68,6 +73,24 @@ enum x86_64_opcode_t {
     X86_64_JNE_REL32_OPCODE2 = 0x0F,
     X86_64_SYSCALL_OPCODE1   = 0x0F,
     X86_64_SYSCALL_OPCODE2   = 0x05,
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+enum x86_64_modrm_reg_t {
+    X86_64_PUSH_M_MODRM_REG = 6,
+    X86_64_POP_M_MODRM_REG  = 0,
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
+enum x86_64_modrm_mod {
+    X86_64_MOD_M_NO_DISP = 0b00,
+    X86_64_MOD_M_DISP8   = 0b01,
+    X86_64_MOD_M_DISP32  = 0b10,
+    X86_64_MOD_RR        = 0b11,
+    X86_64_MOD_RI        = 0b11,
+    X86_64_MOD_MI        = 0b11,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

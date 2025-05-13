@@ -89,10 +89,7 @@ lang_status_t create_elf_file(const char* file_name, const uint8_t* code, size_t
     build_elf(&elf, code, code_size);
 
     FILE* fp = fopen(file_name, "wb");
-    if (!fp) {
-        fprintf(stderr, "fopen error\n");
-        return LANG_ERROR;
-    }
+    VERIFY(!fp, return LANG_ERROR);
 
     fwrite(elf.data, sizeof(uint8_t), elf.size, fp);
 

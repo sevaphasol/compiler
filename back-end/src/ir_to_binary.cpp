@@ -5,10 +5,13 @@
 #include "x86_64_opc_tables.h"
 #include "buffer.h"
 #include "fixup_table.h"
+#include "encode_utils.h"
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_instr(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_instr(lang_ctx_t*  ctx,
+                           ir_instr_t*  ir_instr,
+                           bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
@@ -63,288 +66,112 @@ lang_status_t ir_to_binary(lang_ctx_t* ctx)
         }
     }
 
-    fixup_table_apply(&ctx->fixups, &ctx->label_table, &ctx->ir_buf);
+    // fixup_table_apply(&ctx->fixups, &ctx->label_table, &ctx->ir_buf);
 
     return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-uint8_t choose_optimal_disp(int32_t offset, uint8_t* mod)
+lang_status_t encode_nop(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
 {
-    if (offset >= -128 && offset <= 127) {
-        *mod = 0b01;
-        return 1;
-    } else {
-        *mod = 0b10;
-        return 4;
-    }
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-modrm_t build_modrm(uint8_t mod, uint8_t reg, uint8_t rm)
-{
-    return (modrm_t) {
-        .rm  = rm,
-        .reg = reg,
-        .mod = mod
-    };
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-rex_t build_rex(uint8_t w, uint8_t r, uint8_t b)
-{
-    return (rex_t) {
-        .b      = b,
-        .x      = 0, // SIB is never used in this implementation
-        .r      = r,
-        .w      = w,
-        .prefix = 0b0100 // fixed constant
-    };
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t build_rex_modrm_rr(bin_instr_t* bin_instr, ir_instr_t* ir_instr, uint8_t modrm_reg)
-{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
     ASSERT(bin_instr);
-    ASSERT(ir_instr);
 
-    reg_t dst = ir_instr->opd1.value.reg;
-    reg_t src = ir_instr->opd2.value.reg;
-
-    bin_instr->rex   = build_rex   (1, src > 7, dst > 7);
-    bin_instr->modrm = build_modrm (0b11, src & 0b111, dst & 0b111);
-
-    bin_instr->info.has_rex   = true;
-    bin_instr->info.has_modrm = true;
+    bin_instr->opc              = X86_64_NOP;
+    bin_instr->info.opcode_size = 1;
 
     return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t build_rex_modrm_rm(bin_instr_t* bin_instr, ir_instr_t* ir_instr, uint8_t modrm_reg)
-{
-    ASSERT(bin_instr);
-    ASSERT(ir_instr);
-
-    reg_t dst    = ir_instr->opd1.value.reg;
-    int   offset = ir_instr->opd2.value.offset;
-
-    uint8_t mod = 0;
-
-    bin_instr->info.disp_size = choose_optimal_disp(offset, &mod);
-
-    bin_instr->rex   = build_rex  (1, dst > 7, 0);
-    bin_instr->modrm = build_modrm(mod, dst & 0b111, REG_RBP & 0b111);
-
-    bin_instr->info.has_rex     = true;
-    bin_instr->info.has_modrm   = true;
-    bin_instr->info.has_disp    = true;
-    bin_instr->disp             = offset;
-
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t build_rex_modrm_mr(bin_instr_t* bin_instr, ir_instr_t* ir_instr, uint8_t modrm_reg)
-{
-    ASSERT(bin_instr);
-    ASSERT(ir_instr);
-
-    int   offset = ir_instr->opd1.value.offset;
-    reg_t dst    = ir_instr->opd2.value.reg;
-
-    uint8_t mod = 0;
-
-    bin_instr->info.disp_size = choose_optimal_disp(offset, &mod);
-
-    bin_instr->rex   = build_rex(1, dst > 7, 0);
-    bin_instr->modrm = build_modrm(mod, dst & 0b111, REG_RBP & 0b111);
-
-    bin_instr->info.has_rex     = true;
-    bin_instr->info.has_modrm   = true;
-    bin_instr->info.has_disp    = true;
-    bin_instr->disp             = offset;
-
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t build_rex_modrm_ri(bin_instr_t* bin_instr, ir_instr_t* ir_instr, uint8_t modrm_reg)
-{
-    ASSERT(bin_instr);
-    ASSERT(ir_instr);
-
-    reg_t    dst = ir_instr->opd1.value.reg;
-    number_t imm = ir_instr->opd2.value.imm;
-
-    bin_instr->rex   = build_rex(1, 0, dst > 7);
-    bin_instr->modrm = build_modrm(0b11, modrm_reg, dst & 0b111);
-
-    bin_instr->info.has_rex     = true;
-    bin_instr->info.has_modrm   = true;
-    bin_instr->info.has_imm     = true;
-    bin_instr->info.imm_size    = 4; // Default: 32-bit immediate
-    bin_instr->imm              = imm;
-
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t build_rex_modrm_mi(bin_instr_t* bin_instr, ir_instr_t* ir_instr, uint8_t modrm_reg)
-{
-    ASSERT(bin_instr);
-    ASSERT(ir_instr);
-
-    int32_t  offset = ir_instr->opd1.value.offset;
-    number_t imm    = ir_instr->opd2.value.imm;
-    uint8_t mod = 0;
-
-    bin_instr->info.disp_size = choose_optimal_disp(offset, &mod);
-
-    bin_instr->rex   = build_rex(1, 0, 0);
-    bin_instr->modrm = build_modrm(0b10, modrm_reg, REG_RBP & 0b111);
-
-    bin_instr->info.has_rex     = true;
-    bin_instr->info.has_modrm   = true;
-    bin_instr->info.has_disp    = true;
-    bin_instr->disp             = offset;
-
-    bin_instr->info.has_imm     = true;
-    bin_instr->info.imm_size    = 4;
-    bin_instr->imm              = imm;
-
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-ir_instr_type_t get_ir_instr_type(ir_instr_t* ir_instr)
-{
-    ASSERT(ir_instr);
-
-    switch (ir_instr->opd1.type) {
-        case IR_OPD_REGISTER:
-            switch (ir_instr->opd2.type) {
-                case IR_OPD_REGISTER:  return IR_INSTR_TYPE_REG_REG;
-                case IR_OPD_MEMORY:    return IR_INSTR_TYPE_REG_MEM;
-                case IR_OPD_IMMEDIATE: return IR_INSTR_TYPE_REG_IMM;
-                default:               return IR_INSTR_TYPE_UNDEFINED;
-            }
-        case IR_OPD_MEMORY:
-            switch (ir_instr->opd2.type) {
-                case IR_OPD_REGISTER:  return IR_INSTR_TYPE_MEM_REG;
-                case IR_OPD_IMMEDIATE: return IR_INSTR_TYPE_MEM_IMM;
-                default:               return IR_INSTR_TYPE_UNDEFINED;
-            }
-        default:
-            return IR_INSTR_TYPE_UNDEFINED;
-    }
-
-    return IR_INSTR_TYPE_UNDEFINED;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t set_opc_and_modrm_reg(ir_opc_t ir_opc, ir_instr_type_t ir_instr_type,
-                                    uint16_t* bin_opc, uint8_t* modrm_reg)
-{
-    ASSERT(bin_opc);
-    ASSERT(modrm_reg);
-
-    switch(ir_opc) {
-        case IR_OPC_ADD:
-            *bin_opc   = AddOpcInfo[ir_instr_type].opc;
-            *modrm_reg = AddOpcInfo[ir_instr_type].modrm_reg;
-            break;
-        case IR_OPC_SUB:
-            *bin_opc   = SubOpcInfo[ir_instr_type].opc;
-            *modrm_reg = SubOpcInfo[ir_instr_type].modrm_reg;
-            break;
-        case IR_OPC_MOV:
-            *bin_opc   = MovOpcInfo[ir_instr_type].opc;
-            *modrm_reg = MovOpcInfo[ir_instr_type].modrm_reg;
-            break;
-        case IR_OPC_TEST:
-            *bin_opc   = TestOpcInfo[ir_instr_type].opc;
-            *modrm_reg = TestOpcInfo[ir_instr_type].modrm_reg;
-            break;
-        default:
-            return LANG_ERROR;
-    }
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t encode_two_operand_instr(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_binary_op(ir_instr_t*                    ir_instr,
+                               bin_instr_t*                   bin_instr,
+                               const bin_instr_x86_64_info_t* info_table)
 {
     ASSERT(bin_instr);
     ASSERT(ir_instr);
 
     ir_instr_type_t ir_instr_type = get_ir_instr_type(ir_instr);
 
-    uint16_t opc;
-    uint8_t modrm_reg;
+    bin_instr_x86_64_info_t info = info_table[ir_instr_type];
 
-    set_opc_and_modrm_reg(ir_instr->opc, ir_instr_type, &opc, &modrm_reg);
-    bin_instr->opc = opc;
+    uint8_t modrm_reg = info.modrm_reg;
+
+    bin_instr->opc = info.opc;
 
     switch(ir_instr_type) {
-        case IR_INSTR_TYPE_REG_REG:
-            build_rex_modrm_rr(bin_instr, ir_instr, modrm_reg);
+        case IR_INSTR_TYPE_REG_REG: {
+            build_rex_rr  (bin_instr, ir_instr);
+            build_modrm_rr(bin_instr, ir_instr);
             break;
-        case IR_INSTR_TYPE_REG_MEM:
-            build_rex_modrm_rm(bin_instr, ir_instr, modrm_reg);
+        }
+        case IR_INSTR_TYPE_REG_MEM: {
+            build_rex_rm  (bin_instr, ir_instr);
+            build_modrm_rm(bin_instr, ir_instr);
             break;
-        case IR_INSTR_TYPE_MEM_REG:
-            build_rex_modrm_mr(bin_instr, ir_instr, modrm_reg);
+        }
+        case IR_INSTR_TYPE_MEM_REG: {
+            build_rex_mr  (bin_instr, ir_instr);
+            build_modrm_mr(bin_instr, ir_instr);
             break;
-        case IR_INSTR_TYPE_REG_IMM:
-            build_rex_modrm_ri(bin_instr, ir_instr, modrm_reg);
+        }
+        case IR_INSTR_TYPE_REG_IMM: {
+            build_rex_ri          (bin_instr, ir_instr);
+            build_modrm_and_imm_ri(bin_instr, ir_instr, modrm_reg);
             break;
-        case IR_INSTR_TYPE_MEM_IMM:
-            build_rex_modrm_mi(bin_instr, ir_instr, modrm_reg);
+        }
+        case IR_INSTR_TYPE_MEM_IMM: {
+            build_rex_mi          (bin_instr, ir_instr);
+            build_modrm_and_imm_mi(bin_instr, ir_instr, modrm_reg);
             break;
-        default:
+        }
+        default: {
             return LANG_ERROR;
+        }
     }
-    return LANG_SUCCESS;
-
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t encode_nop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
-{
-    ASSERT(ctx);
-    ASSERT(ir_instr);
-    ASSERT(bin_instr);
-
-    bin_instr->opc = X86_64_NOP;
 
     return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_add(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_add(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
 {
-    return encode_two_operand_instr(ctx, ir_instr, bin_instr);
+    return encode_binary_op(ir_instr, bin_instr, AddOpcInfo);
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_sub(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_sub(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
 {
-    return encode_two_operand_instr(ctx, ir_instr, bin_instr);
+    return encode_binary_op(ir_instr, bin_instr, SubOpcInfo);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_mov(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
+{
+    return encode_binary_op(ir_instr, bin_instr, MovOpcInfo);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_test(lang_ctx_t*  ctx,
+                          ir_instr_t*  ir_instr,
+                          bin_instr_t* bin_instr)
+{
+    return encode_binary_op(ir_instr, bin_instr, TestOpcInfo);
 }
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -371,72 +198,80 @@ lang_status_t encode_div(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_mov(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_push_or_pop_reg(lang_ctx_t*     ctx,
+                                     ir_instr_t*     ir_instr,
+                                     bin_instr_t*    bin_instr,
+                                     x86_64_opcode_t opc)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
     ASSERT(bin_instr);
 
-    ir_instr_type_t ir_instr_type = get_ir_instr_type(ir_instr);
-    uint16_t opc;
-    uint8_t modrm_reg;
+    reg_t reg = ir_instr->opd1.value.reg;
 
-    set_opc_and_modrm_reg(ir_instr->opc, ir_instr_type, &opc, &modrm_reg);
-
-    bin_instr->opc = opc;
-
-    switch (ir_instr_type) {
-        case IR_INSTR_TYPE_REG_REG:
-            build_rex_modrm_rr(bin_instr, ir_instr, modrm_reg);
-            break;
-
-        case IR_INSTR_TYPE_REG_MEM:
-            build_rex_modrm_rm(bin_instr, ir_instr, modrm_reg);
-            break;
-
-        case IR_INSTR_TYPE_MEM_REG:
-            build_rex_modrm_mr(bin_instr, ir_instr, modrm_reg);
-            break;
-
-        case IR_INSTR_TYPE_REG_IMM: {
-            reg_t dst = ir_instr->opd1.value.reg;
-
-            if (dst <= REG_RDI) {
-                bin_instr->opc = 0xB8 + (dst & 0b111);
-                bin_instr->rex = build_rex(1, 0, dst > 7);
-                bin_instr->info.has_rex = true;
-
-                bin_instr->info.has_imm = true;
-                bin_instr->info.imm_size = 8;
-                bin_instr->imm = ir_instr->opd2.value.imm;
-            } else {
-                bin_instr->rex = build_rex(1, 0, 1);
-                bin_instr->info.has_rex = true;
-                bin_instr->opc = 0xC7;
-                bin_instr->modrm = build_modrm(0b11, 0, dst & 0b111);
-                bin_instr->info.has_modrm = true;
-
-                bin_instr->info.has_imm = true;
-                bin_instr->info.imm_size = 8;
-                bin_instr->imm = ir_instr->opd2.value.imm;
-            }
-            break;
-        }
-
-        case IR_INSTR_TYPE_MEM_IMM:
-            build_rex_modrm_mi(bin_instr, ir_instr, modrm_reg);
-            break;
-
-        default:
-            return LANG_ERROR;
+    if (reg >= REG_R8) {
+        bin_instr->rex = build_rex(REX_R_UNUSED, 1);
+        bin_instr->info.has_rex = true;
     }
+
+    bin_instr->opc = opc + trim_reg(reg);
 
     return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_push(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_push_or_pop_mem(lang_ctx_t*        ctx,
+                                     ir_instr_t*        ir_instr,
+                                     bin_instr_t*       bin_instr,
+                                     x86_64_opcode_t    opc,
+                                     x86_64_modrm_reg_t modrm_reg)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc  = opc;
+    int32_t    disp = ir_instr->opd1.value.offset;
+
+    uint8_t disp_size = 0;
+    uint8_t mod       = 0;
+
+    set_mod_and_disp_size(disp, &mod, &disp_size);
+
+    bin_instr->info.has_disp  = true;
+    bin_instr->disp           = disp;
+    bin_instr->info.disp_size = disp_size;
+
+    bin_instr->modrm          = build_modrm(mod, modrm_reg, REG_RBP);
+    bin_instr->info.has_modrm = true;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_push_imm(lang_ctx_t*  ctx,
+                              ir_instr_t*  ir_instr,
+                              bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc           = X86_64_PUSH_I_OPCODE;
+    bin_instr->info.has_imm  = true;
+    bin_instr->info.imm_size = 4;
+    bin_instr->imm           = ir_instr->opd1.value.imm;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_push(lang_ctx_t*  ctx,
+                          ir_instr_t*  ir_instr,
+                          bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
@@ -444,37 +279,28 @@ lang_status_t encode_push(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bi
 
     switch(ir_instr->opd1.type) {
         case IR_OPD_REGISTER: {
-            reg_t reg = ir_instr->opd1.value.reg;
-            if (reg >= REG_R8) {
-                bin_instr->rex = build_rex(1, 0, 1);
-                bin_instr->info.has_rex = true;
-            }
-            bin_instr->opc = X86_64_PUSH_R_OPCODE + (reg & 0x7);
-            break;
+            return encode_push_or_pop_reg(ctx, ir_instr, bin_instr,
+                                          X86_64_PUSH_R_OPCODE);
+        }
+        case IR_OPD_MEMORY: {
+            return encode_push_or_pop_mem(ctx, ir_instr, bin_instr,
+                                          X86_64_PUSH_M_OPCODE,
+                                          X86_64_PUSH_M_MODRM_REG);
         }
         case IR_OPD_IMMEDIATE: {
-            bin_instr->opc = X86_64_PUSH_I_OPCODE;
-            bin_instr->info.has_imm = true;
-            bin_instr->info.imm_size = 4;
-            bin_instr->imm = ir_instr->opd1.value.imm;
-            break;
+            return encode_push_imm(ctx, ir_instr, bin_instr);
         }
-        case IR_OPD_MEMORY: {
-            bin_instr->opc = X86_64_PUSH_M_OPCODE;
-            build_rex_modrm_mr(bin_instr, ir_instr, 6); // /6 for PUSH
-            bin_instr->modrm.reg = 6;
-            break;
-        }
-        default:
+        default: {
             return LANG_ERROR;
+        }
     }
-
-    return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_pop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_pop(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
@@ -482,30 +308,17 @@ lang_status_t encode_pop(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
 
     switch(ir_instr->opd1.type) {
         case IR_OPD_REGISTER: {
-            reg_t reg = ir_instr->opd1.value.reg;
-
-            if (reg >= REG_R8) {
-                bin_instr->rex = build_rex(1, 0, 1);
-                bin_instr->info.has_rex = true;
-
-            }
-            bin_instr->opc = X86_64_POP_R_OPCODE + (reg & 0x7);
-
-            break;
+            return encode_push_or_pop_reg(ctx, ir_instr, bin_instr,
+                                          X86_64_POP_R_OPCODE);
         }
         case IR_OPD_MEMORY: {
-            bin_instr->opc = X86_64_POP_M_OPCODE;
-
-            build_rex_modrm_mr(bin_instr, ir_instr, 0); // /0 for POP
-            bin_instr->modrm.reg = 0;
-
-            break;
+            return encode_push_or_pop_mem(ctx, ir_instr, bin_instr,
+                                          X86_64_POP_M_OPCODE,
+                                          X86_64_POP_M_MODRM_REG);
         }
         default:
             return LANG_ERROR;
     }
-
-    return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -599,13 +412,6 @@ lang_status_t encode_jne(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
     uint16_t opc = (X86_64_JNE_REL32_OPCODE2 << 8) | X86_64_JNE_REL32_OPCODE1;
     bin_instr->info.opcode_size = 2;
     return encode_jumps(ctx, ir_instr, bin_instr, opc);
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t encode_test(lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
-{
-    return encode_two_operand_instr(ctx, ir_instr, bin_instr);
 }
 
 //——————————————————————————————————————————————————————————————————————————————

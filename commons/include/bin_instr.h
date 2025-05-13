@@ -3,6 +3,9 @@
 #ifndef _ENCODER_H__
 #define _ENCODER_H__
 
+#include <stddef.h>
+#include <stdint.h>
+
 //——————————————————————————————————————————————————————————————————————————————
 
 struct rex_t {

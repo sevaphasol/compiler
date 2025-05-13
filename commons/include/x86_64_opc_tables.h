@@ -12,14 +12,14 @@
 
 //——————————————————————————————————————————————————————————————————————————————
 
-struct instr_opc_info_t {
+struct bin_instr_x86_64_info_t {
     x86_64_opcode_t opc;
     uint8_t         modrm_reg;
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
-const instr_opc_info_t AddOpcInfo[] = {
+const bin_instr_x86_64_info_t AddOpcInfo[] = {
     [IR_INSTR_TYPE_REG_REG] = {.opc = X86_64_ADD_RR_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_REG_MEM] = {.opc = X86_64_ADD_RM_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_MEM_REG] = {.opc = X86_64_ADD_MR_OPCODE, .modrm_reg = 0},
@@ -29,7 +29,7 @@ const instr_opc_info_t AddOpcInfo[] = {
 
 //——————————————————————————————————————————————————————————————————————————————
 
-const instr_opc_info_t SubOpcInfo[] = {
+const bin_instr_x86_64_info_t SubOpcInfo[] = {
     [IR_INSTR_TYPE_REG_REG] = {.opc = X86_64_SUB_RR_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_REG_MEM] = {.opc = X86_64_SUB_RM_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_MEM_REG] = {.opc = X86_64_SUB_MR_OPCODE, .modrm_reg = 0},
@@ -39,17 +39,17 @@ const instr_opc_info_t SubOpcInfo[] = {
 
 //——————————————————————————————————————————————————————————————————————————————
 
-const instr_opc_info_t MovOpcInfo[] = {
+const bin_instr_x86_64_info_t MovOpcInfo[] = {
     [IR_INSTR_TYPE_REG_REG] = {.opc = X86_64_MOV_RR_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_REG_MEM] = {.opc = X86_64_MOV_RM_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_MEM_REG] = {.opc = X86_64_MOV_MR_OPCODE, .modrm_reg = 0},
-    [IR_INSTR_TYPE_REG_IMM] = {.opc = X86_64_MOV_RI_OPCODE, .modrm_reg = 5},
-    [IR_INSTR_TYPE_MEM_IMM] = {.opc = X86_64_MOV_MI_OPCODE, .modrm_reg = 5}
+    [IR_INSTR_TYPE_REG_IMM] = {.opc = X86_64_MOV_RI_OPCODE, .modrm_reg = 0},
+    [IR_INSTR_TYPE_MEM_IMM] = {.opc = X86_64_MOV_MI_OPCODE, .modrm_reg = 0}
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
-const instr_opc_info_t TestOpcInfo[] = {
+const bin_instr_x86_64_info_t TestOpcInfo[] = {
     [IR_INSTR_TYPE_REG_REG] = {.opc = X86_64_TEST_RR_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_REG_MEM] = {.opc = X86_64_TEST_RM_OPCODE, .modrm_reg = 0},
     [IR_INSTR_TYPE_MEM_REG] = {.opc = X86_64_TEST_MR_OPCODE, .modrm_reg = 0},
@@ -64,7 +64,7 @@ const instr_opc_info_t TestOpcInfo[] = {
 //——————————————————————————————————————————————————————————————————————————————
 
 // /* Table of tables with info about opc and \r */
-// const instr_opc_info_t* OpcInfo[] = {
+// const bin_instr_x86_64_info_t* OpcInfo[] = {
 //     [IR_OPC_ADD]  = AddOpcInfo,
 //     [IR_OPC_SUB]  = SubOpcInfo,
 //     [IR_OPC_MOV]  = MovOpcInfo,
