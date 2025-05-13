@@ -46,8 +46,9 @@ lang_status_t add_fixup(fixup_table_t* table,
     ASSERT(table);
 
     if (table->size >= table->capacity) {
-        table->entries = (fixup_entry_t*) realloc(table->entries, table->capacity *
-                                                           2 * sizeof(fixup_entry_t));
+        table->entries = (fixup_entry_t*) realloc(table->entries,
+                                                  table->capacity *
+                                                  2 * sizeof(fixup_entry_t));
         if (!table->entries) {
             return LANG_ERROR;
         }
@@ -74,25 +75,31 @@ lang_status_t add_fixup(fixup_table_t* table,
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t fixup_table_apply(fixup_table_t* fixup_table, label_table_t* label_table, buffer_t* code_buf)
+lang_status_t fixup_table_apply(fixup_table_t* fixup_table,
+                                label_table_t* label_table,
+                                buffer_t*      code_buf)
 {
     ASSERT(fixup_table);
     ASSERT(label_table);
 
-    for (size_t i = 0; i < fixup_table->size; ++i) {
+    size_t fixup_table_size = fixup_table->size;
+
+    for (size_t i = 0; i < fixup_table_size; i++) {
         fixup_entry_t* entry = &fixup_table->entries[i];
+        label_value_t  value =  entry->label.value;
 
         uint32_t target_addr = 0;
+
         if (entry->label.is_global) {
-            VERIFY(!label_table_find_global(label_table, entry->label.value.global_name, &target_addr),
-                   return LANG_ERROR);
+            label_table_find_global(label_table, value.global_name, &target_addr);
         } else {
-            VERIFY(label_table_find_local(label_table, entry->label.value.local_number, &target_addr),
-                   return LANG_ERROR);
+            label_table_find_local(label_table, value.local_number, &target_addr);
         }
 
         uint32_t current_addr = entry->offset + 4;
+
         int32_t rel = target_addr - current_addr;
+
         memcpy(code_buf->data + entry->offset, &rel, 4);
     }
 

@@ -66,7 +66,7 @@ lang_status_t ir_to_binary(lang_ctx_t* ctx)
         }
     }
 
-    // fixup_table_apply(&ctx->fixups, &ctx->label_table, &ctx->ir_buf);
+    fixup_table_apply(&ctx->fixups, &ctx->label_table, &ctx->bin_buf);
 
     return LANG_SUCCESS;
 }
@@ -95,6 +95,7 @@ lang_status_t encode_binary_op(ir_instr_t*                    ir_instr,
 {
     ASSERT(bin_instr);
     ASSERT(ir_instr);
+    ASSERT(info_table);
 
     ir_instr_type_t ir_instr_type = get_ir_instr_type(ir_instr);
 
@@ -323,26 +324,33 @@ lang_status_t encode_pop(lang_ctx_t*  ctx,
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_call(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_call(lang_ctx_t*  ctx,
+                          ir_instr_t*  ir_instr,
+                          bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
     ASSERT(bin_instr);
 
     ASSERT(ir_instr->opd1.type == IR_OPD_GLOBAL_LABEL);
+
     const char* name = ir_instr->opd1.value.global_label_name;
+
     bin_instr->opc = X86_64_CALL_REL32_OPCODE;
     bin_instr->info.has_imm = true;
     bin_instr->info.imm_size = 4;
     bin_instr->imm = 0;
-    add_fixup(&ctx->fixups, name, 0, ctx->ir_buf.size + 1);
+
+    add_fixup(&ctx->fixups, name, 0, ctx->bin_buf.size + 1);
 
     return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_ret(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_ret(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
@@ -355,13 +363,16 @@ lang_status_t encode_ret(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_syscall(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_syscall(lang_ctx_t*  ctx,
+                             ir_instr_t*  ir_instr,
+                             bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
     ASSERT(bin_instr);
 
-    bin_instr->opc = (X86_64_SYSCALL_OPCODE2 << 8) | X86_64_SYSCALL_OPCODE1;
+    bin_instr->opc = get_long_opcode(X86_64_SYSCALL_OPCODE1,
+                                     X86_64_SYSCALL_OPCODE2);
     bin_instr->info.opcode_size = 2;
 
     return LANG_SUCCESS;
@@ -379,13 +390,18 @@ lang_status_t encode_jumps(lang_ctx_t*  ctx,
     ASSERT(bin_instr);
 
     ASSERT(ir_instr->opd1.type == IR_OPD_LOCAL_LABEL);
+
     size_t label_num = ir_instr->opd1.value.local_label_number;
+
     bin_instr->opc = opc;
+
     bin_instr->info.has_imm = true;
     bin_instr->info.imm_size = 4;
     bin_instr->imm = 0;
 
-    add_fixup(&ctx->fixups, NULL, label_num, ctx->bin_buf.size + 1);
+    /* Adding 2, because jump opc size == 2*/
+    add_fixup(&ctx->fixups, NULL, label_num, ctx->bin_buf.size + 2);
+
     return LANG_SUCCESS;
 }
 
@@ -400,8 +416,10 @@ lang_status_t encode_jmp(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
 
 lang_status_t encode_je(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    uint16_t opc = (X86_64_JE_REL32_OPCODE2 << 8) | X86_64_JE_REL32_OPCODE1;
+    uint16_t opc = get_long_opcode(X86_64_JE_REL32_OPCODE1,
+                                   X86_64_JE_REL32_OPCODE2);
     bin_instr->info.opcode_size = 2;
+
     return encode_jumps(ctx, ir_instr, bin_instr, opc);
 }
 
@@ -409,8 +427,10 @@ lang_status_t encode_je(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_
 
 lang_status_t encode_jne(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    uint16_t opc = (X86_64_JNE_REL32_OPCODE2 << 8) | X86_64_JNE_REL32_OPCODE1;
+    uint16_t opc = get_long_opcode(X86_64_JNE_REL32_OPCODE1,
+                                   X86_64_JNE_REL32_OPCODE2);
     bin_instr->info.opcode_size = 2;
+
     return encode_jumps(ctx, ir_instr, bin_instr, opc);
 }
 
@@ -423,8 +443,10 @@ lang_status_t encode_local_label(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_inst
     ASSERT(bin_instr);
 
     size_t label_num = ir_instr->opd1.value.local_label_number;
-    size_t curr_addr = ctx->ir_buf.size;
+    size_t curr_addr = ctx->bin_buf.size;
+
     label_table_add_local(&ctx->label_table, label_num, curr_addr);
+
     return LANG_SUCCESS;
 
 }
@@ -438,7 +460,8 @@ lang_status_t encode_global_label(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_ins
     ASSERT(bin_instr);
 
     const char* name = ir_instr->opd1.value.global_label_name;
-    size_t curr_addr = ctx->ir_buf.size;
+    size_t curr_addr = ctx->bin_buf.size;
+
     label_table_add_global(&ctx->label_table, name, curr_addr);
 
     return LANG_SUCCESS;

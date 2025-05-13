@@ -65,7 +65,7 @@ lang_status_t label_table_add_global(label_table_t* table, const char* name, siz
     ASSERT(name);
 
     if (table->size >= table->capacity) {
-        if (!label_table_expand(table)) return LANG_STD_ALLOCATE_ERROR;
+        label_table_expand(table);
     }
 
     label_value_t value = {.global_name = strdup(name)};
@@ -86,7 +86,7 @@ lang_status_t label_table_add_local(label_table_t* table, size_t number, size_t 
     ASSERT(table);
 
     if (table->size >= table->capacity) {
-        if(!label_table_expand(table)) return LANG_STD_ALLOCATE_ERROR;
+        label_table_expand(table);
     }
 
     label_value_t value = {.local_number = number};

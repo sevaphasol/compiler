@@ -72,9 +72,9 @@ lang_status_t operand_ir_to_asm(lang_ctx_t* ctx, ir_opd_t* opd)
         }
         case IR_OPD_MEMORY: {
             if (opd->value.offset < 0) {
-                RAW_ASM("[rbp + %d]", -opd->value.offset)
+                RAW_ASM("[rbp - %d]", -opd->value.offset)
             } else {
-                RAW_ASM("[rbp - %d]",  opd->value.offset);
+                RAW_ASM("[rbp + %d]", opd->value.offset);
             }
             break;
         }
