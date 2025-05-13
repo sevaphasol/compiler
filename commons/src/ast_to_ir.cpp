@@ -79,7 +79,7 @@ lang_status_t var_to_ir(lang_ctx_t* ctx, node_t* node)
 
     identifier_t var = _ID(node);
 
-    EMIT(OP_PUSH(OPD_MEM(var.addr)));
+    EMIT(OP_PUSH(OPD_MEM(-var.addr)));
 
     //--------------------------------------------------------------------------
 
@@ -217,7 +217,7 @@ lang_status_t assignment_to_ir(lang_ctx_t* ctx, node_t* node) // TODO global var
 
     node_to_ir(ctx, node->right);
 
-    EMIT(OP_POP(OPD_MEM(var.addr)));
+    EMIT(OP_POP(OPD_MEM(-var.addr)));
 
     //--------------------------------------------------------------------------
 
