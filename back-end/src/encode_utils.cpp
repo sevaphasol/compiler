@@ -68,8 +68,7 @@ lang_status_t build_rex_rr(bin_instr_t* bin_instr, ir_instr_t* ir_instr)
     reg_t dst = ir_instr->opd1.value.reg;
     reg_t src = ir_instr->opd2.value.reg;
 
-    bin_instr->rex = build_rex(reg_expand(src),
-                               reg_expand(dst));
+    bin_instr->rex = build_rex(REG_RAX, reg_expand(dst));
 
     bin_instr->info.has_rex = true;
 
@@ -129,14 +128,9 @@ lang_status_t build_modrm_rm(bin_instr_t* bin_instr, ir_instr_t* ir_instr)
                                         trim_reg(REG_RBP));
 
     bin_instr->info.has_modrm = true;
-
-    if (disp_size) {
-        bin_instr->info.has_disp  = true;
-        bin_instr->disp           = disp;
-        bin_instr->info.disp_size = disp_size;
-    } else {
-        bin_instr->info.has_disp = false;
-    }
+    bin_instr->info.has_disp  = true;
+    bin_instr->disp           = disp;
+    bin_instr->info.disp_size = disp_size;
 
     return LANG_SUCCESS;
 }
@@ -176,14 +170,9 @@ lang_status_t build_modrm_mr(bin_instr_t* bin_instr, ir_instr_t* ir_instr)
                                         trim_reg(REG_RBP));
 
     bin_instr->info.has_modrm = true;
-
-    if (disp_size) {
-        bin_instr->info.has_disp  = true;
-        bin_instr->disp           = disp;
-        bin_instr->info.disp_size = disp_size;
-    } else {
-        bin_instr->info.has_disp = false;
-    }
+    bin_instr->info.has_disp  = true;
+    bin_instr->disp           = disp;
+    bin_instr->info.disp_size = disp_size;
 
     return LANG_SUCCESS;
 }

@@ -59,6 +59,15 @@ const bin_instr_x86_64_info_t TestOpcInfo[] = {
 
 //——————————————————————————————————————————————————————————————————————————————
 
+const bin_instr_x86_64_info_t ImulOpcInfo[] = {
+    [IR_INSTR_TYPE_REG_REG] = {.opc = X86_64_IMUL_RR_OPCODE, .modrm_reg = 0},
+    [IR_INSTR_TYPE_REG_MEM] = {.opc = X86_64_IMUL_RM_OPCODE, .modrm_reg = 0},
+    [IR_INSTR_TYPE_MEM_REG] = {.opc = X86_64_INVALID_OPCODE, .modrm_reg = 0},
+    [IR_INSTR_TYPE_REG_IMM] = {.opc = X86_64_IMUL_RI_OPCODE, .modrm_reg = 0},
+};
+
+//——————————————————————————————————————————————————————————————————————————————
+
 #define _INSTR_OPC_INFO sizeof(TestOpcInfo)
 
 //——————————————————————————————————————————————————————————————————————————————

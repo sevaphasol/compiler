@@ -31,6 +31,8 @@ const char* const RegNames[] = {
 //——————————————————————————————————————————————————————————————————————————————
 
 enum x86_64_opcode_t {
+    X86_64_INVALID_OPCODE       = 0x00,
+
     X86_64_NOP                  = 0x90,
 
     X86_64_ADD_RR_OPCODE        = 0x01,
@@ -44,6 +46,12 @@ enum x86_64_opcode_t {
     X86_64_SUB_MR_OPCODE        = 0x29,
     X86_64_SUB_RI_OPCODE        = 0x81,
     X86_64_SUB_MI_OPCODE        = 0x81,
+
+    X86_64_IMUL_RR_OPCODE       = 0xaf0f,
+    X86_64_IMUL_RM_OPCODE       = 0xaf0f,
+    X86_64_IMUL_RI_OPCODE       = 0x69,
+
+    X86_64_IDIV_OPCODE          = 0xf7,
 
     X86_64_MOV_RR_OPCODE        = 0x89,
     X86_64_MOV_RM_OPCODE        = 0x8b,
@@ -85,6 +93,7 @@ enum x86_64_opcode_t {
 enum x86_64_modrm_reg_t {
     X86_64_PUSH_M_MODRM_REG = 6,
     X86_64_POP_M_MODRM_REG  = 0,
+    X86_64_DIV_MODRM_REG    = 7,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

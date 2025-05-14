@@ -85,6 +85,7 @@ struct operator_t
 //———————————————————————————————————————————————————————————————————//
 
 lang_status_t binary_operation_to_ir  (lang_ctx_t* ctx, node_t* node);
+lang_status_t div_to_ir               (lang_ctx_t* ctx, node_t* node);
 lang_status_t assignment_to_ir        (lang_ctx_t* ctx, node_t* node);
 lang_status_t statement_to_ir         (lang_ctx_t* ctx, node_t* node);
 lang_status_t if_to_ir                (lang_ctx_t* ctx, node_t* node);
@@ -125,7 +126,7 @@ const operator_t OperatorsTable[] =
     {ADD,           STR_AND_LEN("+"),         "add",         2,          &binary_operation_to_ir , &src_binary_op,    },
     {SUB,           STR_AND_LEN("-"),         "sub",         2,          &binary_operation_to_ir , &src_binary_op,    },
     {MUL,           STR_AND_LEN("*"),         "mul",         2,          &binary_operation_to_ir , &src_binary_op,    },
-    {DIV,           STR_AND_LEN("/"),         "div",         2,          &binary_operation_to_ir , &src_binary_op,    },
+    {DIV,           STR_AND_LEN("/"),         "div",         2,          &div_to_ir              , &src_binary_op,    },
     {COS,           STR_AND_LEN("cos"),       "cos",         1,          nullptr                 , &src_unary_op,     },
     {SIN,           STR_AND_LEN("sin"),       "sin",         1,          nullptr                 , &src_unary_op,     },
     {SQRT,          STR_AND_LEN("sqrt"),      "sqrt",        1,          nullptr                 , &src_unary_op,     },

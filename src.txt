@@ -1,16 +1,11 @@
-~ func add(: var minion : var papoi)
+~ func sum(: var n)
 {
-    ~ return minion + papoi
+    ~ return n / 5
 }
 
 ~ func main()
 {
-    ~ var minion = 1
-    ~ var papoi = 2
-
-    ~ if (minion - papoi) {
-        ~ var sum = call add(: minion : papoi)
-    }
+    ~ var ans = call sum(: 5)
 
     ~ return 0
 }

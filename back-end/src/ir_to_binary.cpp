@@ -177,22 +177,87 @@ lang_status_t encode_test(lang_ctx_t*  ctx,
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_mul(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_imul(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    ASSERT(ctx);
-    ASSERT(ir_instr);
-    ASSERT(bin_instr);
+    bin_instr->info.opcode_size = 2;
 
-    return LANG_ERROR;
+    encode_binary_op(ir_instr, bin_instr, ImulOpcInfo);
+
+    if (get_ir_instr_type(ir_instr) == IR_INSTR_TYPE_REG_REG) {
+        uint8_t tmp          = bin_instr->modrm.rm;
+        bin_instr->modrm.rm  = bin_instr->modrm.reg;
+        bin_instr->modrm.reg = tmp;
+    }
+
+    return LANG_SUCCESS;
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t encode_div(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+lang_status_t encode_idiv_rr(ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    reg_t divider = ir_instr->opd2.value.reg;
+
+    bin_instr->rex = build_rex(REX_R_UNUSED, reg_expand(divider));
+    bin_instr->info.has_rex = true;
+
+    bin_instr->modrm = build_modrm(X86_64_MOD_RR,
+                                   X86_64_DIV_MODRM_REG,
+                                   trim_reg(divider));
+
+    bin_instr->info.has_modrm = true;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_idiv_ri(ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->rex = build_rex(REX_R_UNUSED, REX_B_UNUSED);
+    bin_instr->info.has_rex = true;
+
+    int32_t disp = ir_instr->opd2.value.offset;
+
+    uint8_t mod       = 0;
+    uint8_t disp_size = 0;
+
+    set_mod_and_disp_size(disp, &mod, &disp_size);
+
+    bin_instr->modrm = build_modrm(mod, X86_64_DIV_MODRM_REG,
+                                        trim_reg(REG_RBP));
+
+    bin_instr->info.has_modrm = true;
+    bin_instr->info.has_disp  = true;
+    bin_instr->disp           = disp;
+    bin_instr->info.disp_size = disp_size;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_idiv(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
     ASSERT(bin_instr);
+
+    bin_instr->opc = X86_64_IDIV_OPCODE;
+
+    ir_instr_type_t ir_instr_type = get_ir_instr_type(ir_instr);
+
+    if         (ir_instr_type == IR_INSTR_TYPE_REG_REG) {
+        return encode_idiv_rr(ir_instr, bin_instr);
+    }  else if (ir_instr_type == IR_INSTR_TYPE_REG_IMM) {
+        return encode_idiv_ri(ir_instr, bin_instr);
+    }
 
     return LANG_ERROR;
 }

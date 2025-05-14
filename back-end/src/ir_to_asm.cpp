@@ -134,6 +134,24 @@ lang_status_t binary_opcode_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr)
     return LANG_SUCCESS;
 }
 
+//==============================================================================
+
+lang_status_t idiv_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr)
+{
+    ASSERT(ctx);
+    ASSERT(instr);
+
+    //--------------------------------------------------------------------------
+
+    TAB_ASM("%s ", IrOpAsmNamesTable[instr->opc]);
+    operand_ir_to_asm(ctx, &instr->opd2);
+    RAW_ASM("\n");
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
 //——————————————————————————————————————————————————————————————————————————————
 
 #define _DSL_UNDEF_

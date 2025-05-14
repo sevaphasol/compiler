@@ -74,10 +74,11 @@ int main(int argc, const char* argv[])
 
     label_table_ctor(&ctx.label_table, 10);
     fixup_table_ctor(&ctx.fixups, 10);
-    label_table_dtor(&ctx.label_table);
-    fixup_table_dtor(&ctx.fixups);
 
     ir_to_binary(&ctx);
+
+    label_table_dtor(&ctx.label_table);
+    fixup_table_dtor(&ctx.fixups);
 
     //--------------------------------------------------------------------------
 

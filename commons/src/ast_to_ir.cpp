@@ -107,7 +107,7 @@ lang_status_t passing_func_params_to_ir(lang_ctx_t* ctx, node_t* node, size_t n_
     }
 
     for (size_t i = n_params; i != 0; i--) {
-        var_to_ir(ctx, params[i - 1]->left);
+        node_to_ir(ctx, params[i - 1]->left);
     }
 
     //--------------------------------------------------------------------------
@@ -165,10 +165,10 @@ lang_status_t ir_emit_binary_operation(buffer_t* ir_buf,
             ir_opc = IR_OPC_SUB;
             break;
         case MUL:
-            ir_opc = IR_OPC_MUL;
+            ir_opc = IR_OPC_IMUL;
             break;
         case DIV:
-            ir_opc = IR_OPC_DIV;
+            ir_opc = IR_OPC_IDIV;
             break;
         default:
             return LANG_ERROR;
@@ -187,15 +187,40 @@ lang_status_t binary_operation_to_ir(lang_ctx_t* ctx, node_t* node)
     //--------------------------------------------------------------------------
 
     node_to_ir(ctx, node->left);
-    EMIT(OP_POP(OPD_REG(REG_R10)));
-
     node_to_ir(ctx, node->right);
+
     EMIT(OP_POP(OPD_REG(REG_R11)));
+    EMIT(OP_POP(OPD_REG(REG_R10)));
 
     ir_emit_binary_operation(&ctx->ir_buf, node->value.operator_code,
                              OPD_REG(REG_R10), OPD_REG(REG_R11));
 
     EMIT(OP_PUSH(OPD_REG(REG_R10)));
+
+    //--------------------------------------------------------------------------
+
+    return LANG_SUCCESS;
+}
+
+//==============================================================================
+
+lang_status_t div_to_ir(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    //--------------------------------------------------------------------------
+
+    node_to_ir(ctx, node->left);
+    node_to_ir(ctx, node->right);
+
+    EMIT(OP_POP(OPD_REG(REG_R10)));
+    EMIT(OP_POP(OPD_REG(REG_RAX)));
+
+    ir_emit_binary_operation(&ctx->ir_buf, node->value.operator_code,
+                             OPD_REG(REG_RAX), OPD_REG(REG_R10));
+
+    EMIT(OP_PUSH(OPD_REG(REG_RAX)));
 
     //--------------------------------------------------------------------------
 
