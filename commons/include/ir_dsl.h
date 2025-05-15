@@ -39,9 +39,12 @@
 #define OP_GLOBAL_LABEL(_name) (ir_instr_t){IR_OPC_GLOBAL_LABEL, OPD_GLOBAL_LABEL(_name)}
 #define OP_LOCAL_LABEL(_name)  (ir_instr_t){IR_OPC_LOCAL_LABEL,  OPD_LOCAL_LABEL(_name)}
 
-#define OP_NOP     (ir_instr_t){IR_OPC_NOP, {}, {}}
-#define OP_RET     (ir_instr_t){IR_OPC_RET, {}, {}}
+#define OP_NOP     (ir_instr_t){IR_OPC_NOP,     {}, {}}
+#define OP_RET     (ir_instr_t){IR_OPC_RET,     {}, {}}
 #define OP_SYSCALL (ir_instr_t){IR_OPC_SYSCALL, {}, {}}
+
+#define OP_IN      (ir_instr_t){IR_OPC_IN,  {}, {}}
+#define OP_OUT     (ir_instr_t){IR_OPC_OUT, {}, {}}
 
 //——————————————————————————————————————————————————————————————————————————————
 

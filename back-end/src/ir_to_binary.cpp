@@ -6,6 +6,7 @@
 #include "buffer.h"
 #include "fixup_table.h"
 #include "encode_utils.h"
+#include "lib_calls_table.h"
 
 //——————————————————————————————————————————————————————————————————————————————
 
@@ -497,6 +498,50 @@ lang_status_t encode_jne(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin
     bin_instr->info.opcode_size = 2;
 
     return encode_jumps(ctx, ir_instr, bin_instr, opc);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_lib_func(lang_ctx_t*  ctx,
+                              ir_instr_t*  ir_instr,
+                              bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc = X86_64_CALL_REL32_OPCODE;
+    bin_instr->info.has_imm = true;
+    bin_instr->info.imm_size = 4;
+    bin_instr->imm = 0;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_in(lang_ctx_t*  ctx,
+                        ir_instr_t*  ir_instr,
+                        bin_instr_t* bin_instr)
+{
+    add_lib_call_request(&ctx->lib_calls_table,
+                         LIB_CALL_IN,
+                         ctx->bin_buf.size + 1);
+
+    return encode_lib_func(ctx, ir_instr, bin_instr);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_out(lang_ctx_t*  ctx,
+                         ir_instr_t*  ir_instr,
+                         bin_instr_t* bin_instr)
+{
+    add_lib_call_request(&ctx->lib_calls_table,
+                         LIB_CALL_OUT,
+                         ctx->bin_buf.size + 1);
+
+    return encode_lib_func(ctx, ir_instr, bin_instr);
 }
 
 //——————————————————————————————————————————————————————————————————————————————

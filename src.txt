@@ -1,11 +1,10 @@
-~ func sum(: var n)
-{
-    ~ return n / 5
-}
-
 ~ func main()
 {
-    ~ var ans = call sum(: 5)
+    ~ var test = 0
+
+    ~ scan(: test)
+
+    ~ print(: test)
 
     ~ return 0
 }

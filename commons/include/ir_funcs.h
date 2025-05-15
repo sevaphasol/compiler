@@ -16,6 +16,7 @@ lang_status_t zeroary_opcode_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr);
 lang_status_t unary_opcode_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr);
 lang_status_t binary_opcode_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr);
 lang_status_t idiv_ir_to_asm(lang_ctx_t* ctx, ir_instr_t* instr);
+lang_status_t lib_func_ir_to_asm  (lang_ctx_t*  ctx, ir_instr_t*  ir_instr);
 
 //——————————————————————————————————————————————————————————————————————————————
 
@@ -34,6 +35,8 @@ lang_status_t encode_jmp          (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_
 lang_status_t encode_je           (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
 lang_status_t encode_jne          (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
 lang_status_t encode_test         (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
+lang_status_t encode_in           (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
+lang_status_t encode_out          (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
 lang_status_t encode_local_label  (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
 lang_status_t encode_global_label (lang_ctx_t*  ctx, ir_instr_t*  ir_instr, bin_instr_t* bin_instr);
 

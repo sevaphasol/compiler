@@ -9,6 +9,7 @@
 #include "buffer.h"
 #include "lang_status.h"
 #include "fixup_table.h"
+#include "lib_calls_table.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -94,6 +95,7 @@ lang_status_t new_var_to_ir           (lang_ctx_t* ctx, node_t* node);
 lang_status_t new_func_to_ir          (lang_ctx_t* ctx, node_t* node);
 lang_status_t return_to_ir            (lang_ctx_t* ctx, node_t* node);
 lang_status_t in_to_ir                (lang_ctx_t* ctx, node_t* node);
+lang_status_t out_to_ir               (lang_ctx_t* ctx, node_t* node);
 lang_status_t call_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t exit_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t var_to_ir               (lang_ctx_t* ctx, node_t* node);
@@ -146,7 +148,7 @@ const operator_t OperatorsTable[] =
     {NEW_VAR,       STR_AND_LEN("var"),       nullptr,       2,          &new_var_to_ir          , &src_new_var,      },
     {NEW_FUNC,      STR_AND_LEN("func"),      nullptr,       2,          &new_func_to_ir         , &src_new_func,     },
     {IN,            STR_AND_LEN("scan"),      "in",          1,          &in_to_ir               , &src_in,           },
-    {OUT,           STR_AND_LEN("print"),     "out",         1,          nullptr                 , &src_out,          },
+    {OUT,           STR_AND_LEN("print"),     "out",         1,          &out_to_ir              , &src_out,          },
     {CALL,          STR_AND_LEN("call"),      "call",        0,          &call_to_ir             , &src_call,         },
     {HLT,           STR_AND_LEN("exit"),      nullptr,       0,          &exit_to_ir             , &src_hlt,          }
 };
@@ -264,6 +266,7 @@ struct lang_ctx_t
 
     label_table_t     label_table;
     fixup_table_t     fixups;
+    lib_calls_table_t lib_calls_table;
 };
 
 //———————————————————————————————————————————————————————————————————//
