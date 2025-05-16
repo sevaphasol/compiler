@@ -49,6 +49,7 @@
 #define OP_FILDL(_opd)  (ir_instr_t){IR_OPC_FILDL,  _opd, {}}
 #define OP_FSQRT        (ir_instr_t){IR_OPC_FSQRT,  {},   {}}
 #define OP_FISTPL(_opd) (ir_instr_t){IR_OPC_FISTPL, _opd, {}}
+#define OP_CQO          (ir_instr_t){IR_OPC_CQO,    {},   {}}
 
 //——————————————————————————————————————————————————————————————————————————————
 

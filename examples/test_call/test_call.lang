@@ -1,0 +1,19 @@
+~ func h(: var x)
+{
+    ~ return 0
+}
+
+~ func g(: var x : var y)
+{
+    ~ return call h(: x)
+}
+
+~ func f(: var x : var y : var z)
+{
+    ~ return call g(: x : y)
+}
+
+~ func main()
+{
+    ~ return call f(: 1 : 2 : 3)
+}

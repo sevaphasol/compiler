@@ -437,8 +437,7 @@ lang_status_t encode_syscall(lang_ctx_t*  ctx,
     ASSERT(ir_instr);
     ASSERT(bin_instr);
 
-    bin_instr->opc = get_long_opcode(X86_64_SYSCALL_OPCODE1,
-                                     X86_64_SYSCALL_OPCODE2);
+    bin_instr->opc = X86_64_SYSCALL_OPCODE;
     bin_instr->info.opcode_size = 2;
 
     return LANG_SUCCESS;
@@ -449,7 +448,8 @@ lang_status_t encode_syscall(lang_ctx_t*  ctx,
 lang_status_t encode_jumps(lang_ctx_t*  ctx,
                            ir_instr_t*  ir_instr,
                            bin_instr_t* bin_instr,
-                           uint16_t     opc)
+                           uint16_t     opc,
+                           size_t       opc_size)
 {
     ASSERT(ctx);
     ASSERT(ir_instr);
@@ -460,13 +460,13 @@ lang_status_t encode_jumps(lang_ctx_t*  ctx,
     size_t label_num = ir_instr->opd1.value.local_label_number;
 
     bin_instr->opc = opc;
+    bin_instr->info.opcode_size = opc_size;
 
     bin_instr->info.has_imm = true;
     bin_instr->info.imm_size = 4;
     bin_instr->imm = 0;
 
-    /* Adding 2, because jump opc size == 2*/
-    add_fixup(&ctx->fixups, NULL, label_num, (uint32_t) (ctx->bin_buf.size + 2));
+    add_fixup(&ctx->fixups, NULL, label_num, (uint32_t) (ctx->bin_buf.size + opc_size));
 
     return LANG_SUCCESS;
 }
@@ -475,29 +475,30 @@ lang_status_t encode_jumps(lang_ctx_t*  ctx,
 
 lang_status_t encode_jmp(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    return encode_jumps(ctx, ir_instr, bin_instr, X86_64_JMP_REL32_OPCODE);
+    uint16_t opc      = X86_64_JMP_REL32_OPCODE;
+    uint8_t  opc_size = 1;
+
+    return encode_jumps(ctx, ir_instr, bin_instr, opc, opc_size);
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
 lang_status_t encode_je(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    uint16_t opc = get_long_opcode(X86_64_JE_REL32_OPCODE1,
-                                   X86_64_JE_REL32_OPCODE2);
-    bin_instr->info.opcode_size = 2;
+    uint16_t opc      = X86_64_JE_REL32_OPCODE;
+    uint8_t  opc_size = 2;
 
-    return encode_jumps(ctx, ir_instr, bin_instr, opc);
+    return encode_jumps(ctx, ir_instr, bin_instr, opc, opc_size);
 }
 
 //——————————————————————————————————————————————————————————————————————————————
 
 lang_status_t encode_jne(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
 {
-    uint16_t opc = get_long_opcode(X86_64_JNE_REL32_OPCODE1,
-                                   X86_64_JNE_REL32_OPCODE2);
-    bin_instr->info.opcode_size = 2;
+    uint16_t opc      = X86_64_JNE_REL32_OPCODE;
+    uint8_t  opc_size = 2;
 
-    return encode_jumps(ctx, ir_instr, bin_instr, opc);
+    return encode_jumps(ctx, ir_instr, bin_instr, opc, opc_size);
 }
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -633,6 +634,21 @@ lang_status_t encode_fsqrt(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* b
     ASSERT(bin_instr);
 
     bin_instr->opc              = X86_64_FSQRT_OPCODE;
+    bin_instr->info.opcode_size = 2;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_cqo(lang_ctx_t* ctx,  ir_instr_t*  ir_instr, bin_instr_t* bin_instr)
+{
+
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc              = X86_64_CQO_OPCODE;
     bin_instr->info.opcode_size = 2;
 
     return LANG_SUCCESS;

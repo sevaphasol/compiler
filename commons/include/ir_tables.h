@@ -35,6 +35,7 @@ const char* const IrOpAsmNamesTable[] = {
     [IR_OPC_FILDL]        = "fildl",
     [IR_OPC_FSQRT]        = "fsqrt",
     [IR_OPC_FISTPL]       = "fistpl",
+    [IR_OPC_CQO]          = "cqo",
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -64,6 +65,7 @@ const asm_func_t IrOpAsmFuncsTable[] = {
     [IR_OPC_FILDL]        = unary_opcode_ir_to_asm,
     [IR_OPC_FSQRT]        = zeroary_opcode_ir_to_asm,
     [IR_OPC_FISTPL]       = unary_opcode_ir_to_asm,
+    [IR_OPC_CQO]          = zeroary_opcode_ir_to_asm,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -95,6 +97,7 @@ const encode_func_t IrOpEncodeFuncsTable[] = {
     [IR_OPC_FILDL]        = encode_fildl,
     [IR_OPC_FSQRT]        = encode_fsqrt,
     [IR_OPC_FISTPL]       = encode_fistpl,
+    [IR_OPC_CQO]          = encode_cqo,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

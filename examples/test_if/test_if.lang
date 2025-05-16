@@ -1,0 +1,10 @@
+~ func main()
+{
+    ~ if (0) {
+        ~ print(: 0)
+        ~ return 0
+    }
+
+    ~ print(: 1)
+    ~ return 1
+}

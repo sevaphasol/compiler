@@ -292,10 +292,3 @@ ir_instr_type_t get_ir_instr_type(ir_instr_t* ir_instr)
 }
 
 //——————————————————————————————————————————————————————————————————————————————
-
-x86_64_opcode_t get_long_opcode(uint16_t low_part, uint16_t high_part)
-{
-    return (x86_64_opcode_t) ((high_part << 8) | low_part);
-}
-
-//——————————————————————————————————————————————————————————————————————————————

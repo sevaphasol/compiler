@@ -36,7 +36,6 @@ lang_status_t build_modrm_and_imm_mi(bin_instr_t* bin_instr,
                                      ir_instr_t*  ir_instr,
                                      uint8_t      modrm_reg);
 ir_instr_type_t get_ir_instr_type(ir_instr_t* ir_instr);
-x86_64_opcode_t get_long_opcode(uint16_t low_part, uint16_t high_part);
 
 //——————————————————————————————————————————————————————————————————————————————
 

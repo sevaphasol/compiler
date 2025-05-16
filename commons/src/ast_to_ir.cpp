@@ -185,6 +185,7 @@ lang_status_t div_to_ir(lang_ctx_t* ctx, node_t* node)
 
     EMIT(OP_POP(OPD_REG(REG_R10)));
     EMIT(OP_POP(OPD_REG(REG_RAX)));
+    EMIT(OP_CQO);
 
     ir_emit_binary_operation(&ctx->ir_buf, node->value.operator_code,
                              OPD_REG(REG_RAX), OPD_REG(REG_R10));
@@ -367,7 +368,7 @@ lang_status_t while_to_ir(lang_ctx_t* ctx, node_t* node)
     node_t* statement = node->left;
     node_t* body      = node->right;
 
-    size_t check_label_num = ctx->n_labels;
+    size_t check_label_num = ctx->n_labels++;
     EMIT(OP_JMP(OPD_LOCAL_LABEL(check_label_num)));
 
     size_t body_label_num = ctx->n_labels++;
@@ -379,7 +380,7 @@ lang_status_t while_to_ir(lang_ctx_t* ctx, node_t* node)
 
     EMIT(OP_POP(OPD_REG(REG_RAX)));
     EMIT(OP_TEST(OPD_REG(REG_RAX), OPD_REG(REG_RAX)));
-    EMIT(OP_JE(OPD_LOCAL_LABEL(body_label_num)));
+    EMIT(OP_JNE(OPD_LOCAL_LABEL(body_label_num)));
 
     return LANG_SUCCESS;
 }

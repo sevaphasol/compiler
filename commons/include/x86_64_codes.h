@@ -52,7 +52,7 @@ enum x86_64_opcode_t {
     X86_64_IMUL_RI_OPCODE       = 0x69,
 
     X86_64_IDIV_OPCODE          = 0xf7,
-
+    X86_64_CQO_OPCODE           = 0x9948,
     X86_64_MOV_RR_OPCODE        = 0x89,
     X86_64_MOV_RM_OPCODE        = 0x8b,
     X86_64_MOV_MR_OPCODE        = 0x89,
@@ -78,14 +78,11 @@ enum x86_64_opcode_t {
 
     X86_64_JMP_REL32_OPCODE  = 0xe9,
 
-    X86_64_JE_REL32_OPCODE1  = 0x0f,
-    X86_64_JE_REL32_OPCODE2  = 0x84,
+    X86_64_JE_REL32_OPCODE   = 0x840f,
 
-    X86_64_JNE_REL32_OPCODE1 = 0x0f,
-    X86_64_JNE_REL32_OPCODE2 = 0x85,
+    X86_64_JNE_REL32_OPCODE  = 0x850f,
 
-    X86_64_SYSCALL_OPCODE1   = 0x0F,
-    X86_64_SYSCALL_OPCODE2   = 0x05,
+    X86_64_SYSCALL_OPCODE    = 0x050F,
 
     X86_64_FILDL_OPCODE = 0xdb,
     X86_64_FSQRT_OPCODE = 0xfad9,
