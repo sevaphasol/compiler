@@ -6,7 +6,8 @@
 //——————————————————————————————————————————————————————————————————————————————
 
 #include "ir_opcodes.h"
-#include "ir_funcs.h"
+#include "ir_to_asm_funcs.h"
+#include "encode_funcs.h"
 
 //——————————————————————————————————————————————————————————————————————————————
 
@@ -31,6 +32,9 @@ const char* const IrOpAsmNamesTable[] = {
     [IR_OPC_OUT]          = "call print",
     [IR_OPC_LOCAL_LABEL]  = "local_label",
     [IR_OPC_GLOBAL_LABEL] = "global_label",
+    [IR_OPC_FILDL]        = "fildl",
+    [IR_OPC_FSQRT]        = "fsqrt",
+    [IR_OPC_FISTPL]       = "fistpl",
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -57,6 +61,9 @@ const asm_func_t IrOpAsmFuncsTable[] = {
     [IR_OPC_OUT]          = lib_func_ir_to_asm,
     [IR_OPC_LOCAL_LABEL]  = zeroary_opcode_ir_to_asm,
     [IR_OPC_GLOBAL_LABEL] = zeroary_opcode_ir_to_asm,
+    [IR_OPC_FILDL]        = unary_opcode_ir_to_asm,
+    [IR_OPC_FSQRT]        = zeroary_opcode_ir_to_asm,
+    [IR_OPC_FISTPL]       = unary_opcode_ir_to_asm,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -85,6 +92,9 @@ const encode_func_t IrOpEncodeFuncsTable[] = {
     [IR_OPC_OUT]          = encode_out,
     [IR_OPC_LOCAL_LABEL]  = encode_local_label,
     [IR_OPC_GLOBAL_LABEL] = encode_global_label,
+    [IR_OPC_FILDL]        = encode_fildl,
+    [IR_OPC_FSQRT]        = encode_fsqrt,
+    [IR_OPC_FISTPL]       = encode_fistpl,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

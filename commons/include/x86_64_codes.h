@@ -72,20 +72,24 @@ enum x86_64_opcode_t {
     X86_64_POP_R_OPCODE        = 0x58,
     X86_64_POP_M_OPCODE        = 0x8f,
 
-    X86_64_CALL_REL32_OPCODE = 0xE8,
+    X86_64_CALL_REL32_OPCODE = 0xe8,
 
-    X86_64_RET               = 0xC3,
+    X86_64_RET               = 0xc3,
 
-    X86_64_JMP_REL32_OPCODE  = 0xE9,
+    X86_64_JMP_REL32_OPCODE  = 0xe9,
 
-    X86_64_JE_REL32_OPCODE1  = 0x0F,
+    X86_64_JE_REL32_OPCODE1  = 0x0f,
     X86_64_JE_REL32_OPCODE2  = 0x84,
 
-    X86_64_JNE_REL32_OPCODE1 = 0x0F,
+    X86_64_JNE_REL32_OPCODE1 = 0x0f,
     X86_64_JNE_REL32_OPCODE2 = 0x85,
 
     X86_64_SYSCALL_OPCODE1   = 0x0F,
     X86_64_SYSCALL_OPCODE2   = 0x05,
+
+    X86_64_FILDL_OPCODE = 0xdb,
+    X86_64_FSQRT_OPCODE = 0xfad9,
+    X86_64_FISTPL_OPCODE =0xdb,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
@@ -94,6 +98,8 @@ enum x86_64_modrm_reg_t {
     X86_64_PUSH_M_MODRM_REG = 6,
     X86_64_POP_M_MODRM_REG  = 0,
     X86_64_DIV_MODRM_REG    = 7,
+    X86_64_FILDL_MODRM_REG  = 0,
+    X86_64_FISTPL_MODRM_REG = 3,
 };
 
 //——————————————————————————————————————————————————————————————————————————————

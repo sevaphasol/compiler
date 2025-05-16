@@ -98,6 +98,7 @@ lang_status_t call_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t exit_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t var_to_ir               (lang_ctx_t* ctx, node_t* node);
 lang_status_t node_to_ir              (lang_ctx_t* ctx, node_t* node);
+lang_status_t sqrt_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t build_ir                (lang_ctx_t* ctx);
 
 //———————————————————————————————————————————————————————————————————//
@@ -113,7 +114,7 @@ const operator_t OperatorsTable[] =
     {DIV,           STR_AND_LEN("/"),         "div",         2,          &div_to_ir              , nullptr},
     {COS,           STR_AND_LEN("cos"),       "cos",         1,          nullptr                 , nullptr},
     {SIN,           STR_AND_LEN("sin"),       "sin",         1,          nullptr                 , nullptr},
-    {SQRT,          STR_AND_LEN("sqrt"),      "sqrt",        1,          nullptr                 , nullptr},
+    {SQRT,          STR_AND_LEN("sqrt"),      "sqrt",        1,          &sqrt_to_ir             , nullptr},
     {POW,           STR_AND_LEN("^"),         "pow",         1,          nullptr                 , nullptr},
     {BIGGER,        STR_AND_LEN(">"),         nullptr,       2,          &assignment_to_ir       , nullptr},
     {SMALLER,       STR_AND_LEN("<"),         nullptr,       2,          &assignment_to_ir       , nullptr},

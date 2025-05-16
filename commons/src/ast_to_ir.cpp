@@ -379,7 +379,7 @@ lang_status_t while_to_ir(lang_ctx_t* ctx, node_t* node)
 
     EMIT(OP_POP(OPD_REG(REG_RAX)));
     EMIT(OP_TEST(OPD_REG(REG_RAX), OPD_REG(REG_RAX)));
-    EMIT(OP_LOCAL_LABEL(body_label_num));
+    EMIT(OP_JE(OPD_LOCAL_LABEL(body_label_num)));
 
     return LANG_SUCCESS;
 }
@@ -428,6 +428,23 @@ lang_status_t exit_to_ir(lang_ctx_t* ctx, node_t* node)
 
     EMIT(OP_MOV(OPD_REG(REG_RAX), OPD_IMM(60)));
     EMIT(OP_SYSCALL);
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t sqrt_to_ir(lang_ctx_t* ctx, node_t* node)
+{
+    ASSERT(ctx);
+    ASSERT(node);
+
+    identifier_t var = _ID(node->left->left);
+
+    EMIT(OP_FILDL(OPD_MEM(-var.addr)));
+    EMIT(OP_FSQRT);
+    EMIT(OP_FISTPL(OPD_MEM(-var.addr)));
+    EMIT(OP_PUSH(OPD_MEM(-var.addr)));
 
     return LANG_SUCCESS;
 }

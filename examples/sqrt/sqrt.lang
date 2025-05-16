@@ -1,0 +1,12 @@
+~ func main()
+{
+    ~ var n = 25
+
+    ~ scan(: n)
+
+    ~ n = sqrt(: n)
+
+    ~ print(: n)
+
+    ~ return 0
+}

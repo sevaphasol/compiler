@@ -1,28 +1,21 @@
 #!/bin/bash
 
-
-if [ "$#" -ne 3 ]; then
-  source_path="source.txt"
-  frontend_path="frontend.txt"
-  backend_path="backend.s"
+if [ "$#" -eq 2 ]; then
+    SRCFILE="$1"
+    OUTFILE="$2"
+    ASMFILE="${OUTFILE%.*}.s"
+elif [ "$#" -eq 1 ]; then
+    SRCFILE="$1"
+    OUTFILE="${SRCFILE%.*}.out"
+    ASMFILE="${OUTFILE%.*}.s"
 else
-  source_path="$1"
-  frontend_path="$2"
-  backend_path="$3"
+    echo "Usage: $0 <input-file> [output-file]"
+    exit 1
 fi
 
-cd commons
-make clean
-make
+TMPFILE=$(mktemp frontend_tmp.XXXXXX)
 
-cd ../front-end
-make clean
-make
+front-end/build/frontend "$SRCFILE" "$TMPFILE"
+back-end/build/backend -i "$TMPFILE" -o "$OUTFILE" -S "$ASMFILE"
 
-cd ../back-end
-make clean
-make
-
-cd ..
-front-end/build/frontend $source_path $frontend_path
-back-end/build/backend  $frontend_path $backend_path
+rm -f "$TMPFILE"

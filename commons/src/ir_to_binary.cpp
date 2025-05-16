@@ -578,3 +578,64 @@ lang_status_t encode_global_label(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_ins
 }
 
 //——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_fpu(lang_ctx_t*        ctx,
+                         ir_instr_t*        ir_instr,
+                         bin_instr_t*       bin_instr,
+                         x86_64_opcode_t    opc,
+                         x86_64_modrm_reg_t modrm_reg)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc = opc;
+
+    int32_t disp = ir_instr->opd1.value.offset;
+
+    uint8_t disp_size = 0;
+    uint8_t mod       = 0;
+
+    set_mod_and_disp_size(disp, &mod, &disp_size);
+
+    bin_instr->info.has_disp  = true;
+    bin_instr->disp           = disp;
+    bin_instr->info.disp_size = disp_size;
+
+    bin_instr->modrm          = build_modrm(mod, modrm_reg, REG_RBP);
+    bin_instr->info.has_modrm = true;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_fildl(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    return encode_fpu(ctx, ir_instr, bin_instr,
+                      X86_64_FILDL_OPCODE, X86_64_FILDL_MODRM_REG);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_fistpl(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    return encode_fpu(ctx, ir_instr, bin_instr,
+                      X86_64_FISTPL_OPCODE, X86_64_FISTPL_MODRM_REG);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+lang_status_t encode_fsqrt(lang_ctx_t* ctx, ir_instr_t* ir_instr, bin_instr_t* bin_instr)
+{
+    ASSERT(ctx);
+    ASSERT(ir_instr);
+    ASSERT(bin_instr);
+
+    bin_instr->opc              = X86_64_FSQRT_OPCODE;
+    bin_instr->info.opcode_size = 2;
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————

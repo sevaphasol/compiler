@@ -6,7 +6,7 @@
 #include "lang.h"
 #include "x86_64_codes.h"
 #include "ir_opcodes.h"
-#include "ir_funcs.h"
+#include "ir_to_asm_funcs.h"
 #include "ir_operands.h"
 #include "ir_tables.h"
 #include "ir_emit_funcs.h"
