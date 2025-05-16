@@ -1,37 +1,37 @@
-#ifndef _LIB_CALLS_TABLE_H__
-#define _LIB_CALLS_TABLE_H__
+#ifndef ARGV_PARSER_H__
+#define ARGV_PARSER_H__
 
 //——————————————————————————————————————————————————————————————————————————————
 
-#include <stddef.h>
+#include <inttypes.h>
 
 //——————————————————————————————————————————————————————————————————————————————
 
-enum lib_call_request_type_t {
-    LIB_CALL_INVALID = 0,
-    LIB_CALL_IN      = 1,
-    LIB_CALL_OUT     = 2,
+const char* const BackendDefaultOutputName = "program.out";
+const char* const BackendDefaultInputName  = "frontend.txt";
+
+//——————————————————————————————————————————————————————————————————————————————
+
+enum ap_status_t
+{
+    AP_SUCCESS = 0,
+    AP_ERROR   = 1,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
-struct lib_call_request_t {
-    lib_call_request_type_t type;
-    size_t                  addr;
+struct ap_ctx_t
+{
+    bool        dump_source;
+    const char* source_name;
+    const char* input_file;
+    const char* output_file;
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
-struct lib_calls_table_t {
-    lib_call_request_t* requests;
-    size_t              capacity;
-    size_t              size;
+ap_status_t parse_argv(int argc, char *argv[], ap_ctx_t* ctx);
 
-    size_t              in_addr;
-    size_t              out_addr;
-    bool                load_in;
-    bool                load_out;
-};
+//——————————————————————————————————————————————————————————————————————————————
 
-
-#endif // _LIB_CALLS_TABLE_H__
+#endif // ARGV_PARSER_H__

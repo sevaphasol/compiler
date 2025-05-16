@@ -6,6 +6,7 @@
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "io_interaction.h"
+#include "color_print.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -83,7 +84,7 @@ int main(int argc, const char* argv[])
 
     //---------------------------------------------------------------//
 
-    printf(_GREEN("Success\n"));
+    fprintf(stderr, _PURPLE("Frontend: ") _GREEN("success\n"));
 
     //-------------------------------------------------------------------//
 

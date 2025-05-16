@@ -1,5 +1,3 @@
-//——————————————————————————————————————————————————————————————————————————————
-
 #include "buffer.h"
 #include "custom_assert.h"
 
@@ -13,7 +11,7 @@ lang_status_t buf_ctor(buffer_t* buf, size_t init_capacity)
     ASSERT(buf);
 
     buf->data = (uint8_t*) calloc(init_capacity, sizeof(uint8_t));
-    if (!buf->data) return LANG_ERROR;
+    VERIFY(!buf->data, return LANG_ERROR);
 
     buf->capacity = init_capacity;
     buf->size = 0;
@@ -27,9 +25,7 @@ lang_status_t buf_dtor(buffer_t* buf)
 {
     ASSERT(buf);
 
-    if (!buf->data) {
-        return LANG_ERROR;
-    }
+    VERIFY(!buf->data, return LANG_ERROR);
 
     free(buf->data);
 
@@ -46,10 +42,7 @@ lang_status_t buf_write(buffer_t* buf, const void* data, size_t data_size)
     if (buf->size + data_size >= buf->capacity) {
         buf->data = (uint8_t*) realloc(buf->data, 2 * buf->capacity *
                                                       sizeof(uint8_t));
-        if (!buf->data) {
-            return LANG_ERROR;
-        }
-
+        VERIFY(!buf->data, return LANG_ERROR);
         buf->capacity *= 2;
     }
 
@@ -61,7 +54,10 @@ lang_status_t buf_write(buffer_t* buf, const void* data, size_t data_size)
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t buf_rewrite(buffer_t* buf, const void* data, size_t data_size, size_t offset)
+lang_status_t buf_rewrite(buffer_t*   buf,
+                          const void* data,
+                          size_t      data_size,
+                          size_t      offset)
 {
     ASSERT(buf);
     ASSERT(data);

@@ -5,88 +5,108 @@
 #include <sys/stat.h>
 #include <stdarg.h>
 
-//-------------------------------------------------------------------//
-
 #include "graph_dump.h"
 #include "node_allocator.h"
 #include "custom_assert.h"
 #include "ir.h"
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————
 
-static tree_dump_status_t dot_file_init  (FILE*       dot_file);
+static tree_dump_status_t dot_file_init (FILE*       dot_file);
 
-static tree_dump_status_t make_edges     (lang_ctx_t*     ctx,
-                                          node_t*         node,
-                                          FILE*           file);
+static tree_dump_status_t make_edges    (lang_ctx_t*     ctx,
+                                         node_t*         node,
+                                         FILE*           file);
 
-static tree_dump_status_t make_elem      (lang_ctx_t*     ctx,
-                                          node_t*         node,
-                                          FILE*           file);
+static tree_dump_status_t make_elem     (lang_ctx_t*     ctx,
+                                         node_t*         node,
+                                         FILE*           file);
 
-static tree_dump_status_t create_png     (const char* dot_file_name,
-                                          const char* png_file_name);
+static tree_dump_status_t create_png    (const char* dot_file_name,
+                                         const char* png_file_name);
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————
 
-void make_node(FILE* file, void* elem_ptr, const char* name, int val)
+void make_dot_elem_str(FILE*       file,
+                       void*       elem_number,
+                       const char* label,
+                       const char* str)
 {
-    fprintf(file, "elem%p["
-                  "shape=\"Mrecord\", "
-                  "label= \"{%s | val = %d}\""
-                  "];\n",
-                  elem_ptr,
-                  name,
-                  val);
-}
-
-//==============================================================================
-
-void make_dot_reg(FILE* file, ir_opd_t* opd)
-{
-    const char* reg_name = RegNames[opd->value.reg];
+    ASSERT(file);
+    ASSERT(label);
+    ASSERT(str);
 
     fprintf(file, "elem%p["
                   "shape=\"Mrecord\", "
-                  "label= \"{%s | name = %s}\""
+                  "label= \"{%s | val = %s}\""
                   "];\n",
-                  opd,
-                  "REGISTER",
-                  reg_name);
+                  elem_number,
+                  label,
+                  str);
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-tree_dump_status_t make_dot_opd(FILE* file, ir_opd_t* opd)
+void make_dot_elem_number(FILE*       file,
+                          void*       elem_number,
+                          const char* label,
+                          int64_t     number)
 {
+    ASSERT(file);
+    ASSERT(label);
+
+    fprintf(file, "elem%p["
+                  "shape=\"Mrecord\", "
+                  "label= \"{%s | val = %ld}\""
+                  "];\n",
+                  elem_number,
+                  label,
+                  number);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+void make_dot_elems_connection(FILE* file, void* number1, void* number2)
+{
+    ASSERT(file);
+
+   fprintf(file, "elem%p->elem%p;", number1, number2);
+}
+
+//——————————————————————————————————————————————————————————————————————————————
+
+tree_dump_status_t make_dot_ir_opd(FILE* file, ir_opd_t* opd)
+{
+    ASSERT(file);
+    ASSERT(opd);
+
     switch(opd->type) {
         case IR_OPD_NAN: {
             return TREE_DUMP_EMPTY;
         }
         case IR_OPD_REGISTER: {
-            make_dot_reg(file, opd);
+            make_dot_elem_str   (file, opd, "REGISTER",
+                                 RegNames[opd->value.reg]);
             break;
         }
         case IR_OPD_MEMORY: {
-            make_node(file, opd, "MEMORY", opd->value.offset);
+            make_dot_elem_number(file, opd, "MEMORY",
+                                 opd->value.offset);
             break;
         }
         case IR_OPD_IMMEDIATE: {
-            make_node(file, opd, "IMMERSIVE", opd->value.imm);
+            make_dot_elem_number(file, opd, "IMMEDIATE",
+                                 opd->value.imm);
             break;
         }
         case IR_OPD_GLOBAL_LABEL: {
-            fprintf(file, "elem%p["
-                          "shape=\"Mrecord\", "
-                          "label= \"{%s | name = %s}\""
-                          "];\n",
-                          opd,
-                          "GLOBAL LABEL",
-                          opd->value.global_label_name);
+            make_dot_elem_str   (file, opd, "GLOBAL LABEL",
+                                 opd->value.global_label_name);
             break;
         }
         case IR_OPD_LOCAL_LABEL: {
-            make_node(file, opd, "LOCAL LABEL", opd->value.local_label_number);
+            make_dot_elem_number(file, opd, "LOCAL LABEL",
+                                 opd->value.local_label_number);
             break;
         }
         default: {
@@ -98,7 +118,7 @@ tree_dump_status_t make_dot_opd(FILE* file, ir_opd_t* opd)
     return TREE_DUMP_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
 tree_dump_status_t make_ir_elem(lang_ctx_t* ctx, ir_instr_t* instr, FILE* file)
 {
@@ -106,37 +126,27 @@ tree_dump_status_t make_ir_elem(lang_ctx_t* ctx, ir_instr_t* instr, FILE* file)
     ASSERT(instr);
     ASSERT(file);
 
-    //-------------------------------------------------------------------//
+    make_dot_elem_str(file, instr, "OPCODE", IrOpAsmNamesTable[instr->opc]);
 
-    fprintf(file, "elem%p["
-                  "shape=\"Mrecord\", "
-                  "label= \"{%s | asm_name = %s}\""
-                  "];\n",
-                  instr,
-                  "OPCODE",
-                  IrOpAsmNamesTable[instr->opc]);
-
-    if (make_dot_opd(file, &instr->opd1) == TREE_DUMP_SUCCESS) {
-        fprintf(file, "elem%p->elem%p;", &instr->opc, &instr->opd1);
+    if (make_dot_ir_opd(file, &instr->opd1) == TREE_DUMP_SUCCESS) {
+        make_dot_elems_connection(file, &instr->opc, &instr->opd1);
     }
 
-    if (make_dot_opd(file, &instr->opd2) == TREE_DUMP_SUCCESS) {
-        fprintf(file, "elem%p->elem%p;", &instr->opc, &instr->opd2);
+    if (make_dot_ir_opd(file, &instr->opd2) == TREE_DUMP_SUCCESS) {
+        make_dot_elems_connection(file, &instr->opc, &instr->opd2);
     }
-
-    //-------------------------------------------------------------------//
 
     return TREE_DUMP_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx,
-                                        ir_instr_t* buffer)
+tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx, ir_instr_t* buffer)
 {
-    ASSERT(ctx)
+    ASSERT(ctx);
+    ASSERT(buffer);
 
-    static size_t n_dumps = 0;
+    static size_t n_dumps = 1;
 
     char dot_file_name[FileNameBufSize] = {};
     snprintf(dot_file_name, FileNameBufSize,
@@ -166,16 +176,12 @@ tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx,
 
     create_png(dot_file_name, png_file_name);
 
-    //-------------------------------------------------------------------//
-
     n_dumps++;
-
-    //-------------------------------------------------------------------//
 
     return TREE_DUMP_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
 tree_dump_status_t graph_dump(lang_ctx_t* ctx,
                               node_t*     node,
@@ -183,11 +189,7 @@ tree_dump_status_t graph_dump(lang_ctx_t* ctx,
 {
     ASSERT(ctx);
 
-    //-------------------------------------------------------------------//
-
     static size_t n_dumps = 0;
-
-    //-------------------------------------------------------------------//
 
     char dot_file_name[FileNameBufSize] = {};
     snprintf(dot_file_name, FileNameBufSize,
@@ -199,26 +201,16 @@ tree_dump_status_t graph_dump(lang_ctx_t* ctx,
 
     dot_file_init(dot_file);
 
-    //-------------------------------------------------------------------//
-
-    if (mode == TREE)
-    {
+    if (mode == TREE) {
         make_edges(ctx, node, dot_file);
-    }
-    else if (mode == ARR)
-    {
-        for (int node_ind = 0; node_ind < ctx->n_nodes; node_ind++)
-        {
+    } else if (mode == ARR) {
+        for (int node_ind = 0; node_ind < ctx->n_nodes; node_ind++) {
             make_elem(ctx, ctx->nodes[node_ind], dot_file);
         }
     }
 
-    //-------------------------------------------------------------------//
-
     fputs("}\n", dot_file);
     fclose(dot_file);
-
-    //-------------------------------------------------------------------//
 
     char png_file_name[FileNameBufSize] = {};
     snprintf(png_file_name, FileNameBufSize,
@@ -227,11 +219,7 @@ tree_dump_status_t graph_dump(lang_ctx_t* ctx,
 
     create_png(dot_file_name, png_file_name);
 
-    //-------------------------------------------------------------------//
-
     n_dumps++;
-
-    //-------------------------------------------------------------------//
 
     return TREE_DUMP_SUCCESS;
 }
@@ -241,8 +229,6 @@ tree_dump_status_t graph_dump(lang_ctx_t* ctx,
 tree_dump_status_t dot_file_init(FILE* dot_file)
 {
     ASSERT(dot_file);
-
-    //-------------------------------------------------------------------//
 
     fprintf(dot_file, "digraph G{\n"
                       "nodesep=1;\n"
@@ -257,8 +243,6 @@ tree_dump_status_t dot_file_init(FILE* dot_file)
                       EdgeColor, EdgeFontColor,
                       BackGroundColor);
 
-    //-------------------------------------------------------------------//
-
     return TREE_DUMP_SUCCESS;
 }
 
@@ -270,7 +254,7 @@ tree_dump_status_t make_elem(lang_ctx_t* ctx, node_t* node, FILE* file)
     ASSERT(node);
     ASSERT(file);
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     switch(node->value_type)
     {
@@ -339,7 +323,7 @@ tree_dump_status_t make_elem(lang_ctx_t* ctx, node_t* node, FILE* file)
         }
     }
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     return TREE_DUMP_SUCCESS;
 }
@@ -351,11 +335,11 @@ tree_dump_status_t make_edges(lang_ctx_t* ctx, node_t* node, FILE* file)
     ASSERT(node);
     ASSERT(file);
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     make_elem(ctx, node, file);
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     if (node->left)
     {
@@ -373,7 +357,7 @@ tree_dump_status_t make_edges(lang_ctx_t* ctx, node_t* node, FILE* file)
         make_edges(ctx, node->right, file);
     }
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     return TREE_DUMP_SUCCESS;
 }
@@ -386,7 +370,7 @@ tree_dump_status_t create_png(const char* dot_file_name,
     ASSERT(dot_file_name);
     ASSERT(png_file_name);
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     char command[SysCommandBufSize] = {};
     snprintf(command, SysCommandBufSize, "touch %s; dot %s -Tpng -o %s",
@@ -395,9 +379,9 @@ tree_dump_status_t create_png(const char* dot_file_name,
     VERIFY(system(command),
            return TREE_DUMP_SYSTEM_COMMAND_ERROR);
 
-    //-------------------------------------------------------------------//
+    //——————————————————————————————————————————————————————————————————————————————
 
     return TREE_DUMP_SUCCESS;
 }
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————

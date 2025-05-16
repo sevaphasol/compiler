@@ -5,6 +5,13 @@
 
 //——————————————————————————————————————————————————————————————————————————————
 
+#define BIN_BUF_INIT_CAPACITY 4096
+#define TABLE_INIT_CAPACITY   10
+#define REX_PREFIX            0b0100
+#define OPERANDS_64_BIT       1
+
+//——————————————————————————————————————————————————————————————————————————————
+
 #include "lang_status.h"
 #include "bin_instr.h"
 #include "ir.h"

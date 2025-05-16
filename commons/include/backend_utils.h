@@ -1,24 +1,29 @@
-#ifndef _IR_H__
-#define _IR_H__
+#ifndef _BACKEND_UTILS_H__
+#define _BACKEND_UTILS_H__
 
 //——————————————————————————————————————————————————————————————————————————————
 
 #include "lang.h"
-#include "x86_64_codes.h"
-#include "ir_opcodes.h"
-#include "ir_funcs.h"
-#include "ir_operands.h"
-#include "ir_tables.h"
-#include "ir_emit_funcs.h"
-#include "ir_instr.h"
-
-#define IR_BUFFER_INIT_CAPACITY 64
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t ir_to_binary(lang_ctx_t* ctx);
-lang_status_t ir_to_asm   (lang_ctx_t* ctx);
+lang_status_t backend_lang_ctx_ctor   (lang_ctx_t* ctx,
+                                       int         argc,
+                                       char*       argv[]);
+
+lang_status_t backend_lang_ctx_dtor   (lang_ctx_t* ctx);
+
+lang_status_t read_tree               (lang_ctx_t* ctx,
+                                       node_t**    node);
+
+lang_status_t put_node_value          (int         type,
+                                       int         val,
+                                       value_t*    node_value);
+
+lang_status_t read_name_table         (lang_ctx_t* ctx);
+
+lang_status_t read_input_ctx          (lang_ctx_t* ctx);
 
 //——————————————————————————————————————————————————————————————————————————————
 
-#endif // _IR_H__
+#endif // _BACKEND_UTILS_H__

@@ -1,6 +1,0 @@
-sosal? krosovka a = 1 + 1 + 1
-
-sosal? korobka main()
-{
-    sosal? print(krasivaya 4 * (1 + 4) / 52)
-}

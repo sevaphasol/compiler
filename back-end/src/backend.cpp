@@ -11,249 +11,122 @@
 #include "ir.h"
 #include "fixup_table.h"
 #include "elf_builder.h"
+#include "buffer.h"
+#include "lib_call_funcs.h"
+#include "backend_utils.h"
+#include "encode_utils.h"
+#include "color_print.h"
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————
 
-#define _DSL_DEFINE_
-#include "dsl.h"
+static lang_status_t compile    (lang_ctx_t* ctx);
+static lang_status_t make_ir    (lang_ctx_t* ctx);
+static lang_status_t make_asm   (lang_ctx_t* ctx);
+static lang_status_t make_binary(lang_ctx_t* ctx);
 
-//———————————————————————————————————————————————————————————————————//
+//——————————————————————————————————————————————————————————————————————————————
 
-static lang_status_t read_tree_from_file(lang_ctx_t* ctx, node_t** node);
-static lang_status_t read_tree(lang_ctx_t* ctx, node_t** node);
-static lang_status_t put_node_value(int type, int val, value_t* node_value);
-static lang_status_t read_name_table(lang_ctx_t* ctx);
-
-//———————————————————————————————————————————————————————————————————//
-
-int main(int argc, const char* argv[])
+int main(int argc, char* argv[])
 {
     lang_ctx_t ctx = {};
 
     node_allocator_t node_allocator;
     ctx.node_allocator = &node_allocator;
 
-    //-------------------------------------------------------------------//
-
-    VERIFY(lang_ctx_ctor(&ctx, argc, argv, BackendDefaultInput, BackendDefaultOutput),
+    VERIFY(backend_lang_ctx_ctor(&ctx, argc, argv),
            return EXIT_FAILURE);
 
-    //-------------------------------------------------------------------//
-
-    VERIFY(read_name_table(&ctx),
-           lang_ctx_dtor(&ctx);
+    VERIFY(read_input_ctx(&ctx),
+           backend_lang_ctx_dtor(&ctx);
            return EXIT_FAILURE);
 
-    //-------------------------------------------------------------------//
-
-    VERIFY(read_tree(&ctx, &ctx.tree),
-           lang_ctx_dtor(&ctx);
+    VERIFY(compile(&ctx),
+           backend_lang_ctx_dtor(&ctx);
            return EXIT_FAILURE);
 
-    //-------------------------------------------------------------------//
-
-    VERIFY(graph_dump(&ctx, ctx.tree, TREE),
-           lang_ctx_dtor(&ctx);
-           return EXIT_FAILURE);
-
-    //-------------------------------------------------------------------//
-
-    buf_ctor(&ctx.ir_buf, IR_BUFFER_INIT_CAPACITY);
-
-    //--------------------------------------------------------------------------
-
-    build_ir(&ctx);
-
-    ir_buffer_graph_dump(&ctx, (ir_instr_t*) &ctx.ir_buf.data);
-
-    ir_to_asm(&ctx);
-
-    //--------------------------------------------------------------------------
-
-    buf_ctor(&ctx.bin_buf, 4096);
-
-    label_table_ctor(&ctx.label_table, 10);
-    fixup_table_ctor(&ctx.fixups, 10);
-
-    ir_to_binary(&ctx);
-
-    label_table_dtor(&ctx.label_table);
-    fixup_table_dtor(&ctx.fixups);
-
-    //--------------------------------------------------------------------------
-
-    create_elf_file("out", ctx.bin_buf.data, ctx.bin_buf.size);
-
-    //--------------------------------------------------------------------------
-
-    buf_dtor(&ctx.ir_buf);
-
-    //-------------------------------------------------------------------//
-
-    printf(_GREEN("Success\n"));
-
-    //-------------------------------------------------------------------//
+    fprintf(stderr, _PURPLE("Backend: ") _GREEN("success\n"));
 
     return EXIT_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t read_name_table(lang_ctx_t* ctx)
+lang_status_t compile(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
 
-    //--------------------------------------------------------------------------
+    VERIFY(make_ir(ctx), return LANG_ERROR);
 
-    int n_chars = 0;
-
-    size_t n_ids = 0;
-    sscanf(ctx->code, "%ld%n", &n_ids, &n_chars);
-    ctx->code += n_chars;
-    ctx->name_table.n_ids = n_ids;
-
-    ctx->name_table.ids = (identifier_t*) calloc(n_ids, sizeof(identifier_t));
-    VERIFY(!ctx->name_table.ids,
-           return LANG_STD_ALLOCATE_ERROR);
-
-    int  len = 0;
-    char buf[MaxStrLength] = {};
-    int type = 0;
-    int n_params = 0;
-    int is_global;
-    int nchars = 0;
-
-    for (int i = 0; i < n_ids; i++) {
-        sscanf(ctx->code, " { %d %s %d %d %d } %n",
-                          &len,
-                          buf,
-                          &type,
-                          &is_global,
-                          &n_params,
-                          &nchars);
-
-        ctx->code += nchars;
-
-        ctx->name_table.ids[i].type      = (identifier_type_t) type;
-        ctx->name_table.ids[i].n_params  = n_params;
-        ctx->name_table.ids[i].name      = strdup(buf);
-        ctx->name_table.ids[i].is_global = is_global;
+    if (ctx->ap_ctx.dump_source) {
+        VERIFY(make_asm(ctx), return LANG_ERROR);
     }
 
-    sscanf(ctx->code, " %ld%n", &ctx->n_nodes, &nchars);
-    ctx->code += nchars;
+    VERIFY(make_binary(ctx), return LANG_ERROR);
 
-    //--------------------------------------------------------------------------
+    VERIFY(create_elf_file(ctx->ap_ctx.output_file,
+                           ctx->bin_buf.data,
+                           ctx->bin_buf.size),
+           return LANG_ERROR);
 
     return LANG_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t read_tree(lang_ctx_t* ctx, node_t** node)
+lang_status_t make_ir(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
-    ASSERT(node);
 
-    //--------------------------------------------------------------------------
-
-    while (isspace(*ctx->code)) {
-        ctx->code++;
-    }
-
-    //--------------------------------------------------------------------------
-
-    if (*ctx->code == '_') {
-        ctx->code++;
-        *node = nullptr;
-
-        return LANG_SUCCESS;
-    }
-
-    //--------------------------------------------------------------------------
-
-    int nchars = 0;
-    int type   = 0;
-    int val    = 0;
-
-    sscanf(ctx->code, "%*[^0-9] %d %d%n", &type, &val, &nchars);
-
-    //--------------------------------------------------------------------------
-
-    value_t node_value = {};
-
-    VERIFY(put_node_value(type, val ,&node_value),
-           return LANG_PUT_NODE_VALUE_ERROR);
-
-    //--------------------------------------------------------------------------
-
-    *node = node_ctor(ctx->node_allocator,
-                      (value_type_t) type,
-                      node_value,
-                      0,
-                      nullptr,
-                      nullptr);
-
-    //--------------------------------------------------------------------------
-
-    ctx->code += nchars;
-
-    VERIFY(read_tree(ctx, &(*node)->left),
-           return LANG_READ_LEFT_NODE_ERROR);
-
-    VERIFY(read_tree(ctx, &(*node)->right),
-           return LANG_READ_RIGHT_NODE_ERROR);
-
-    //--------------------------------------------------------------------------
-
-    while (isspace(*ctx->code)) {ctx->code++;}
-
-    VERIFY(*(ctx)->code != '}',
-           return LANG_INCORRECT_INPUT_SYNTAX_ERROR);
-
-    ctx->code++;
-
-    //--------------------------------------------------------------------------
+    buf_ctor(&ctx->ir_buf, IR_BUFFER_INIT_CAPACITY);
+    build_ir(ctx);
+    ir_buffer_graph_dump(ctx, (ir_instr_t*) &ctx->ir_buf.data);
 
     return LANG_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t put_node_value(int type, int val, value_t* node_value)
+lang_status_t make_asm(lang_ctx_t* ctx)
 {
-    ASSERT(node_value);
+    ASSERT(ctx);
 
-    //--------------------------------------------------------------------------
+    ctx->output_file = fopen(ctx->ap_ctx.source_name, "wb");
+    VERIFY(!ctx->output_file, return LANG_FILE_OPEN_ERROR);
 
-    switch(type) {
-        case OPERATOR: {
-            node_value->operator_code = (operator_code_t) val;
-            break;
-        }
-        case IDENTIFIER: {
-            node_value->id_index = val;
-            break;
-        }
-        case NUMBER: {
-            node_value->number = (number_t) val;
-            break;
-        }
-        default: {
-            fprintf(stderr, "Unknown type: %d\n", type);
+    ir_to_asm(ctx);
 
-            return LANG_UNKNOWN_TYPE_ERROR;
-        }
-    }
-
-    //--------------------------------------------------------------------------
+    fclose(ctx->output_file);
 
     return LANG_SUCCESS;
 }
 
-//==============================================================================
+//——————————————————————————————————————————————————————————————————————————————
 
-#define _DSL_UNDEF_
-#include "dsl.h"
+lang_status_t make_binary(lang_ctx_t* ctx)
+{
+    ASSERT(ctx);
 
-//———————————————————————————————————————————————————————————————————//
+    buf_ctor(&ctx->bin_buf, BIN_BUF_INIT_CAPACITY);
+
+    label_table_ctor    (&ctx->label_table,     TABLE_INIT_CAPACITY);
+    fixup_table_ctor    (&ctx->fixups,          TABLE_INIT_CAPACITY);
+    lib_calls_table_ctor(&ctx->lib_calls_table, TABLE_INIT_CAPACITY);
+
+    ir_to_binary(ctx);
+
+    buf_dtor(&ctx->ir_buf);
+
+    label_table_dtor(&ctx->label_table);
+    fixup_table_dtor(&ctx->fixups);
+
+    if (ctx->lib_calls_table.load_in ||
+        ctx->lib_calls_table.load_out) {
+        solve_lib_call_requests(ctx);
+    }
+
+    lib_calls_table_dtor(&ctx->lib_calls_table);
+
+    return LANG_SUCCESS;
+}
+
+//——————————————————————————————————————————————————————————————————————————————

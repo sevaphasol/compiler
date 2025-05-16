@@ -1,0 +1,20 @@
+~ func factorial(: var n)
+{
+    ~ if (n) {
+        ~ return n * call factorial(: n - 1)
+    }
+
+    ~ return 1
+}
+
+
+~ func main()
+{
+    ~ var test = 0
+
+    ~ scan(: test)
+
+    ~ print(: call factorial (: test))
+
+    ~ return 0
+}

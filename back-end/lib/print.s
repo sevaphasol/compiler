@@ -7,6 +7,9 @@ print:
         mov rsi, rsp ; start of buffer
         add rsi, 15  ; end of buffer
 
+        pxor xmm0, xmm0 ; zeroing buffer
+        movdqu [rsp], xmm0
+
         xor ebx, ebx
         test eax, eax
         jns .positive

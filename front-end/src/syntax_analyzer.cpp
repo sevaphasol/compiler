@@ -6,6 +6,7 @@
 
 #define _DSL_DEFINE_
 #include "dsl.h"
+#include "color_print.h"
 
 // #define _STACK_DUMP
 

@@ -5,6 +5,7 @@
 #include "ctype.h"
 #include "node_allocator.h"
 #include "graph_dump.h"
+#include "color_print.h"
 
 //———————————————————————————————————————————————————————————————————//
 
