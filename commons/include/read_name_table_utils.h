@@ -1,16 +1,25 @@
-#ifndef _IR_EMIT_FUNCS_H__
-#define _IR_EMIT_FUNCS_H__
+#ifndef _READ_NAME_TABLE_UTILS_H__
+#define _READ_NAME_TABLE_UTILS_H__
 
 //——————————————————————————————————————————————————————————————————————————————
 
 #include "lang.h"
-#include "ir_opcodes.h"
-#include "ir_operands.h"
+
+#define N_NODES_INIT 1024
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t ir_emit_instr(buffer_t* ir_buf, ir_instr_t ir_instr);
+lang_status_t read_tree               (lang_ctx_t* ctx,
+                                       node_t**    node);
+
+lang_status_t put_node_value          (int         type,
+                                       int         val,
+                                       value_t*    node_value);
+
+lang_status_t read_name_table         (lang_ctx_t* ctx);
+
+lang_status_t read_input_ctx          (lang_ctx_t* ctx);
 
 //——————————————————————————————————————————————————————————————————————————————
 
-#endif // _IR_EMIT_FUNCS_H__
+#endif // _READ_NAME_TABLE_UTILS_H__

@@ -1,5 +1,3 @@
-//——————————————————————————————————————————————————————————————————————————————
-
 #ifndef _ELF_SECTION_HEADER_BUILDERS_H__
 #define _ELF_SECTION_HEADER_BUILDERS_H__
 
@@ -22,5 +20,3 @@ void build_shstrtab_shdr(Elf64_Shdr* shdr, size_t shstrtab_size, uint32_t name_o
 //——————————————————————————————————————————————————————————————————————————————
 
 #endif // _ELF_SECTION_HEADER_BUILDERS_H__
-
-//——————————————————————————————————————————————————————————————————————————————

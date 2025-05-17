@@ -1,5 +1,3 @@
-//——————————————————————————————————————————————————————————————————————————————
-
 #ifndef _LANG_STATUS_H__
 #define _LANG_STATUS_H__
 
@@ -87,10 +85,10 @@ enum lang_status_t {
     LANG_SIMPLIFY_OPR_CODE_ERROR         = 78,
     LANG_NOT_CONSTANT_STATUS             = 79,
     LANG_TRY_CALC_ERROR                  = 80,
+    LANG_IS_CONSTANT_STATUS              = 81,
+    LANG_NOT_OPERATOR_STATUS             = 82,
 };
 
 //——————————————————————————————————————————————————————————————————————————————
 
 #endif // _LANG_STATUS_H__
-
-//——————————————————————————————————————————————————————————————————————————————

@@ -84,7 +84,7 @@ int main(int argc, const char* argv[])
 
     //---------------------------------------------------------------//
 
-    fprintf(stderr, _PURPLE("Frontend: ") _GREEN("success\n"));
+    fprintf(stderr, _PURPLE("front-end: ") _GREEN("success\n"));
 
     //-------------------------------------------------------------------//
 

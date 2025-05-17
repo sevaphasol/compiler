@@ -110,7 +110,6 @@ tree_dump_status_t make_dot_ir_opd(FILE* file, ir_opd_t* opd)
             break;
         }
         default: {
-            fprintf(stderr, "ERROR in %s:%d\n", __FILE__, __LINE__);
             return TREE_DUMP_EMPTY;
         }
     }
@@ -146,7 +145,7 @@ tree_dump_status_t ir_buffer_graph_dump(lang_ctx_t* ctx, ir_instr_t* buffer)
     ASSERT(ctx);
     ASSERT(buffer);
 
-    static size_t n_dumps = 1;
+    static size_t n_dumps = 0;
 
     char dot_file_name[FileNameBufSize] = {};
     snprintf(dot_file_name, FileNameBufSize,

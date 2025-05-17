@@ -1,16 +1,30 @@
-#ifndef _IR_EMIT_FUNCS_H__
-#define _IR_EMIT_FUNCS_H__
+#ifndef _IR_LIST_H__
+#define _IR_LIST_H__
 
 //——————————————————————————————————————————————————————————————————————————————
 
-#include "lang.h"
-#include "ir_opcodes.h"
-#include "ir_operands.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+
+#include "ir_instr.h"
+#include "lang_status.h"
 
 //——————————————————————————————————————————————————————————————————————————————
 
-lang_status_t ir_emit_instr(buffer_t* ir_buf, ir_instr_t ir_instr);
+struct ir_node_t {
+    ir_instr_t instr;
+    ir_node_t* next;
+    ir_node_t* prev;
+};
 
 //——————————————————————————————————————————————————————————————————————————————
 
-#endif // _IR_EMIT_FUNCS_H__
+ir_node_t* new_ir_node();
+
+lang_status_t cut_node    (ir_node_t* ir_node);
+lang_status_t ir_list_dtor(ir_node_t* ir_list);
+
+//——————————————————————————————————————————————————————————————————————————————
+
+#endif // _IR_LIST_H__

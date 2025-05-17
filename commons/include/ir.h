@@ -11,11 +11,13 @@
 #include "ir_tables.h"
 #include "ir_emit_funcs.h"
 #include "ir_instr.h"
+#include "ir_list.h"
 
 #define IR_BUFFER_INIT_CAPACITY 64
 
 //——————————————————————————————————————————————————————————————————————————————
 
+lang_status_t build_ir    (lang_ctx_t* ctx);
 lang_status_t ir_to_binary(lang_ctx_t* ctx);
 lang_status_t ir_to_asm   (lang_ctx_t* ctx);
 

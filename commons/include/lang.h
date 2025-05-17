@@ -11,6 +11,7 @@
 #include "lang_status.h"
 #include "fixup_table.h"
 #include "lib_calls_table.h"
+#include "ir_list.h"
 
 //———————————————————————————————————————————————————————————————————//
 
@@ -99,14 +100,13 @@ lang_status_t exit_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t var_to_ir               (lang_ctx_t* ctx, node_t* node);
 lang_status_t node_to_ir              (lang_ctx_t* ctx, node_t* node);
 lang_status_t sqrt_to_ir              (lang_ctx_t* ctx, node_t* node);
-lang_status_t build_ir                (lang_ctx_t* ctx);
 
 //———————————————————————————————————————————————————————————————————//
 
 #define STR_AND_LEN(str) str, sizeof(str)
 
 const operator_t OperatorsTable[] =
-{ // code           name and len              asm_name    n_childs       to_ir_func                src_func
+{ // code           name and len              asm_name    n_children    to_ir_func                src_func
     {UNDEFINED,     nullptr, 0,               nullptr,       0,          nullptr                 , nullptr},
     {ADD,           STR_AND_LEN("+"),         "add",         2,          &binary_operation_to_ir , nullptr},
     {SUB,           STR_AND_LEN("-"),         "sub",         2,          &binary_operation_to_ir , nullptr},
@@ -246,6 +246,7 @@ struct lang_ctx_t
     size_t            n_globals;
     size_t            n_locals;
 
+    ir_node_t*        ir_list;
     buffer_t          ir_buf;
     buffer_t          bin_buf;
 

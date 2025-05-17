@@ -1,0 +1,24 @@
+digraph G{
+nodesep=1;
+ranksep=0.5;
+rankdir=HR;
+node[style=filled, color="#0a0a0a", fillcolor="#494a4a",fontcolor="#e6e6e6", fontsize=14];
+edge[color="#000000", fontsize=12, penwidth=1, fontcolor = "#49006a"];
+bgcolor="#9c9c9c";
+elem0x557fa0e2eac0[shape="Mrecord", label= "{OPERATOR | name = ~ | operator_code = 16}"];
+elem0x557fa0e2eac0->elem0x557fa0e2eae8;elem0x557fa0e2eae8[shape="Mrecord", label= "{OPERATOR | name = func | operator_code = 22}"];
+elem0x557fa0e2eae8->elem0x557fa0e2eb10;elem0x557fa0e2eb10[shape="Mrecord", label= "{IDENTIFIER | type = FUNC | name = calc | operator_code = 0}"];
+elem0x557fa0e2eb10->elem0x557fa0e2eb38;elem0x557fa0e2eb38[shape="Mrecord", label= "{OPERATOR | name = : | operator_code = 20}"];
+elem0x557fa0e2eb38->elem0x557fa0e2eb60;elem0x557fa0e2eb60[shape="Mrecord", label= "{OPERATOR | name = var | operator_code = 21}"];
+elem0x557fa0e2eb60->elem0x557fa0e2eb88;elem0x557fa0e2eb88[shape="Mrecord", label= "{IDENTIFIER | type = VAR | name = a | operator_code = 1}"];
+elem0x557fa0e2eb38->elem0x557fa0e2ebb0;elem0x557fa0e2ebb0[shape="Mrecord", label= "{OPERATOR | name = : | operator_code = 20}"];
+elem0x557fa0e2ebb0->elem0x557fa0e2ebd8;elem0x557fa0e2ebd8[shape="Mrecord", label= "{OPERATOR | name = var | operator_code = 21}"];
+elem0x557fa0e2ebd8->elem0x557fa0e2ec00;elem0x557fa0e2ec00[shape="Mrecord", label= "{IDENTIFIER | type = VAR | name = b | operator_code = 2}"];
+elem0x557fa0e2eb10->elem0x557fa0e2ec28;elem0x557fa0e2ec28[shape="Mrecord", label= "{OPERATOR | name = ~ | operator_code = 16}"];
+elem0x557fa0e2ec28->elem0x557fa0e2ec50;elem0x557fa0e2ec50[shape="Mrecord", label= "{OPERATOR | name = return | operator_code = 19}"];
+elem0x557fa0e2ec50->elem0x557fa0e2ec78;elem0x557fa0e2ec78[shape="Mrecord", label= "{OPERATOR | name = * | operator_code = 3}"];
+elem0x557fa0e2ec78->elem0x557fa0e2eca0;elem0x557fa0e2eca0[shape="Mrecord", label= "{NUMBER | val = 121}"];
+elem0x557fa0e2ec78->elem0x557fa0e2f038;elem0x557fa0e2f038[shape="Mrecord", label= "{OPERATOR | name = + | operator_code = 1}"];
+elem0x557fa0e2f038->elem0x557fa0e2f060;elem0x557fa0e2f060[shape="Mrecord", label= "{IDENTIFIER | type = VAR | name = a | operator_code = 1}"];
+elem0x557fa0e2f038->elem0x557fa0e2f088;elem0x557fa0e2f088[shape="Mrecord", label= "{IDENTIFIER | type = VAR | name = b | operator_code = 2}"];
+}
