@@ -30,6 +30,8 @@ static lang_status_t make_ir    (lang_ctx_t* ctx);
 static lang_status_t make_asm   (lang_ctx_t* ctx);
 static lang_status_t make_binary(lang_ctx_t* ctx);
 
+extern lang_status_t optimize_ir(lang_ctx_t* ctx);
+
 //——————————————————————————————————————————————————————————————————————————————
 
 int main(int argc, char* argv[])
@@ -53,7 +55,7 @@ int main(int argc, char* argv[])
     VERIFY(backend_lang_ctx_dtor(&ctx),
            return EXIT_FAILURE);
 
-    fprintf(stderr, _PURPLE("back-end:  ") _GREEN("success\n"));
+    fprintf(stderr, _PURPLE("back-end:   ") _GREEN("success\n"));
 
     return EXIT_SUCCESS;
 }
@@ -64,7 +66,8 @@ lang_status_t compile(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
 
-    VERIFY(make_ir(ctx), return LANG_ERROR);
+    VERIFY(make_ir(ctx),     return LANG_ERROR);
+    VERIFY(optimize_ir(ctx), return LANG_ERROR);
 
     if (ctx->ap_ctx.dump_source) {
         VERIFY(make_asm(ctx), return LANG_ERROR);

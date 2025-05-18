@@ -20,6 +20,10 @@ lang_status_t read_name_table         (lang_ctx_t* ctx);
 
 lang_status_t read_input_ctx          (lang_ctx_t* ctx);
 
+lang_status_t name_table_output       (lang_ctx_t* ctx);
+
+lang_status_t tree_output             (lang_ctx_t* ctx, node_t* node);
+
 //——————————————————————————————————————————————————————————————————————————————
 
 #endif // _READ_NAME_TABLE_UTILS_H__

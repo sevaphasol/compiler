@@ -8,80 +8,59 @@ _start:
 main:
         push qword rbp
         mov rbp, rsp
-        sub rsp, 32
-        push qword 1
-        pop qword [rbp - 8]
-        push qword 1
-        pop qword [rbp - 16]
-        push qword 0
-        pop qword [rbp - 24]
+        mov [rbp - 8], 1
+        mov [rbp - 16], 1
+        mov [rbp - 24], 0
         call scan 
         mov [rbp - 24], rax
-        push qword [rbp - 24]
-        pop qword rax
+        mov rax, [rbp - 24]
         test rax, rax
-        je .L0
+        je .L4
         push qword [rbp - 8]
         call print 
         add rsp, 8
         push qword [rbp - 24]
-        push qword 1
-        pop qword r11
+        mov r11, 1
         pop qword r10
         sub r10, r11
-        push qword r10
-        pop qword [rbp - 24]
-        push qword [rbp - 24]
-        pop qword rax
+        mov [rbp - 24], r10
+        mov rax, [rbp - 24]
         test rax, rax
-        je .L1
+        je .L5
         push qword [rbp - 16]
         call print 
         add rsp, 8
         push qword [rbp - 24]
-        push qword 1
-        pop qword r11
+        mov r11, 1
         pop qword r10
         sub r10, r11
-        push qword r10
-        pop qword [rbp - 24]
-        jmp .L2
-.L3:
-        push qword [rbp - 16]
-        pop qword [rbp - 32]
+        mov [rbp - 24], r10
+        jmp .L6
+.L7:
+        mov [rbp - 32], [rbp - 16]
         push qword [rbp - 8]
-        push qword [rbp - 16]
-        pop qword r11
+        mov r11, [rbp - 16]
         pop qword r10
         add r10, r11
-        push qword r10
-        pop qword [rbp - 16]
-        push qword [rbp - 32]
-        pop qword [rbp - 8]
+        mov [rbp - 16], r10
+        mov [rbp - 8], [rbp - 32]
         push qword [rbp - 16]
         call print 
         add rsp, 8
         push qword [rbp - 24]
-        push qword 1
-        pop qword r11
+        mov r11, 1
         pop qword r10
         sub r10, r11
-        push qword r10
-        pop qword [rbp - 24]
-.L2:
-        push qword [rbp - 24]
-        pop qword rax
+        mov [rbp - 24], r10
+.L6:
+        mov rax, [rbp - 24]
         test rax, rax
-        jne .L3
-        push qword 0
-        pop qword rax
-        add rsp, 32
+        jne .L7
+        mov rax, 0
         pop qword rbp
         ret
-.L1:
-.L0:
-        push qword 0
-        pop qword rax
-        add rsp, 32
+.L5:
+.L4:
+        mov rax, 0
         pop qword rbp
         ret

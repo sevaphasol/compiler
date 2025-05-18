@@ -13,9 +13,12 @@ else
     exit 1
 fi
 
-TMPFILE=$(mktemp frontend_tmp.XXXXXX)
+TMPFILE_FRONT=$(mktemp frontend_tmp.XXXXXX)
+TMPFILE_MIDDLE=$(mktemp middleend_tmp.XXXXXX)
 
-front-end/build/frontend "$SRCFILE" "$TMPFILE"
-back-end/build/backend -i "$TMPFILE" -o "$OUTFILE" -S "$ASMFILE"
+front-end/build/frontend "$SRCFILE" "$TMPFILE_FRONT"
+middle-end/build/middle-end -i "$TMPFILE_FRONT" -o "$TMPFILE_MIDDLE"
+back-end/build/backend -i "$TMPFILE_MIDDLE" -o "$OUTFILE" -S "$ASMFILE"
 
-rm -f "$TMPFILE"
+rm -f "$TMPFILE_FRONT"
+rm -f "$TMPFILE_MIDDLE"

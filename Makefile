@@ -1,4 +1,4 @@
-SUBDIRS = commons front-end back-end
+SUBDIRS = commons front-end back-end middle-end
 
 all: build
 
