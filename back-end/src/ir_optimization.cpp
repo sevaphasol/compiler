@@ -10,7 +10,6 @@
 static lang_status_t ir_buf_to_ir_list        (lang_ctx_t* ctx);
 static lang_status_t ir_list_to_ir_buf        (lang_ctx_t* ctx);
 static lang_status_t remove_push_pop          (lang_ctx_t* ctx);
-static lang_status_t make_ir_list             (lang_ctx_t* ctx);
 
 static lang_status_t replace_push_pop_with_mov(ir_node_t* push_node,
                                                ir_node_t* pop_node);
@@ -25,7 +24,7 @@ lang_status_t optimize_ir(lang_ctx_t* ctx)
 {
     ASSERT(ctx);
 
-    VERIFY(make_ir_list             (ctx),          return LANG_ERROR);
+    VERIFY(ir_buf_to_ir_list(ctx),                  return LANG_ERROR);
     VERIFY(remove_push_pop          (ctx),          return LANG_ERROR);
     VERIFY(remove_trivial_arithmetic(ctx),          return LANG_ERROR);
     VERIFY(ir_list_to_ir_buf        (ctx),          return LANG_ERROR);
@@ -93,14 +92,16 @@ lang_status_t remove_push_pop(lang_ctx_t* ctx)
     ir_node_t* cur_node = ctx->ir_list;
 
     while(cur_node && cur_node->next) {
-        ir_opc_t cur_opc  = cur_node->instr.opc;
-        ir_opc_t next_opc = cur_node->next->instr.opc;
+        ir_instr_t cur_instr  = cur_node->instr;
+        ir_instr_t next_instr = cur_node->next->instr;
 
-        ir_opd_type_t cur_opd1  = cur_node->instr.opd1.type;
-        ir_opd_type_t next_opd1 = cur_node->instr.opd2.type;
+        bool is_push_pop  = cur_instr.opc  == IR_OPC_PUSH &&
+                            next_instr.opc == IR_OPC_POP;
 
-        if ((cur_opc == IR_OPC_PUSH && next_opc == IR_OPC_POP) &&
-            !(cur_opd1 == IR_OPD_MEMORY && next_opd1 == IR_OPD_MEMORY)) {
+        bool is_valid_mov = !(cur_instr.opd1.type  == IR_OPD_MEMORY &&
+                              next_instr.opd1.type == IR_OPD_MEMORY);
+
+        if (is_push_pop && is_valid_mov) {
             replace_push_pop_with_mov(cur_node, cur_node->next);
         }
 
@@ -181,23 +182,3 @@ lang_status_t ir_list_to_ir_buf(lang_ctx_t* ctx)
 }
 
 //——————————————————————————————————————————————————————————————————————————————
-
-lang_status_t make_ir_list(lang_ctx_t* ctx)
-{
-    ASSERT(ctx);
-
-    VERIFY(buf_ctor(&ctx->ir_buf, IR_BUFFER_INIT_CAPACITY),
-           return LANG_ERROR);
-
-    VERIFY(build_ir(ctx), return LANG_ERROR);
-
-    VERIFY(ir_buffer_graph_dump(ctx, (ir_instr_t*) &ctx->ir_buf.data),
-           return LANG_ERROR);
-
-    VERIFY(ir_buf_to_ir_list(ctx), return LANG_ERROR);
-
-    return LANG_SUCCESS;
-}
-
-//——————————————————————————————————————————————————————————————————————————————
-

@@ -10,7 +10,7 @@ factorial:
         mov rbp, rsp
         mov rax, [rbp + 16]
         test rax, rax
-        je .L1
+        je .L0
         push qword [rbp + 16]
         push qword [rbp + 16]
         mov r11, 1
@@ -25,13 +25,14 @@ factorial:
         mov rax, r10
         pop qword rbp
         ret
-.L1:
+.L0:
         mov rax, 1
         pop qword rbp
         ret
 main:
         push qword rbp
         mov rbp, rsp
+        sub rsp, 8
         mov [rbp - 8], 0
         call scan 
         mov [rbp - 8], rax
@@ -42,5 +43,6 @@ main:
         call print 
         add rsp, 8
         mov rax, 0
+        add rsp, 8
         pop qword rbp
         ret

@@ -108,6 +108,7 @@ lang_status_t make_asm(lang_ctx_t* ctx)
     ir_to_asm(ctx);
 
     fclose(ctx->output_file);
+    ctx->output_file = nullptr;
 
     return LANG_SUCCESS;
 }
