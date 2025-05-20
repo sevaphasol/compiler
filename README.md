@@ -1,6 +1,5 @@
 # Компилятор для языка программирования SPL
 
-[![Status](https://img.shields.io/badge/status-govnokod-red)]()
 [![Language](https://img.shields.io/badge/language-C-blue)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 
