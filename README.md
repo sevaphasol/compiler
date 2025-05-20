@@ -4,6 +4,20 @@
 [![Language](https://img.shields.io/badge/language-C-blue)]()
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 
+## Содержание
+
+<div class="toc">
+  <div class="toc-item">1. <a href="#установка-и-запуск">Установка и запуск</a></div>
+  <div class="toc-item">2. <a href='#синтаксис'>Синтаксис</a></div>
+  <div class="toc-item">3. <a href="#архитектура-компилятора">Архитектура компилятора</a></div>
+  <div class="toc-item">4. <a href='#формат-ast'>Формат AST</a></div>
+  <div class="toc-item">5. <a href='#формат-ir'>Формат IR</a></div>
+  <div class="toc-item">6. <a href='#поддержка-print-и-scan'>Поддержка print и scan</a></div>
+  <div class="toc-item">7. <a href='#сравнение-с-компилятором-под-виртуальную-машину'>Сравнение с компилятором под виртуальную машину</a></div>
+  <div class="toc-item">8. <a href='#литература'>Литература</a></div>
+</div><br>
+
+
 **SPL** (*Simple* *Programming* *Language*) — C-подобный язык программирования со своим компилятором, написанным с нуля. Компилятор заточен под архитектуру x86-64, реализует полный цикл обработки кода: от лексического анализа до генерации исполняемого ELF файла. Данный проект является учебным, выполнялся студентом 1 курса ФРКТ МФТИ.
 
 ## Установка и запуск
@@ -338,7 +352,7 @@ scan:
 
 ## Сравнение с компилятором под виртуальную машину
 
-Данный проект является продолжением разработки [компилятора, созданного в предыдущем семестре](https://github.com/sevaphasol/language.git). В рамках прошлого проекта был реализован интерпретатор для собственного языка программирования, выполняющий байт-код на #[виртуальной машине](https://github.com/sevaphasol/SPU.git). Цель сравнения: выявить разницу в производительности между выполнением программы через виртуальную машину и нативным исполнением на процессоре.
+Данный проект является продолжением разработки [компилятора, созданного в предыдущем семестре](https://github.com/sevaphasol/language.git). В рамках прошлого проекта был реализован интерпретатор для собственного языка программирования, выполняющий байт-код на [виртуальной машине](https://github.com/sevaphasol/SPU.git). Цель сравнения: выявить разницу в производительности между выполнением программы через виртуальную машину и нативным исполнением на процессоре.
 
 ### Тестовая задача
 
@@ -393,3 +407,12 @@ scan:
 |x86-64      |0.20 ± 0.05         |
 
 Таким образом, производительность увеличилась примерно в 150 раз.
+
+## Литература
+
+<ul style="list-style-type: none; padding-left: 0;">
+  <li><a id="bib1"></a>[1] <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Intel® 64 and IA-32 Architectures Software Developer Manuals</a></li>
+  <li><a id="bib2"></a>[2] <a href="https://wiki.osdev.org/X86-64_Instruction_Encoding">x86-64 Instruction encoding</a></li>
+  <li><a id="bib3"></a>[3] <a href="https://www.youtube.com/watch?v=mY9r_qpGa7w&t=10s">Видео про кодирование инструкций</a></li>
+  <li><a id="bib4"></a>[4] <a href="hhttps://man7.org/linux/man-pages/man5/elf.5.html">Про ELF</a></li>
+</ul>
