@@ -403,16 +403,16 @@ scan:
 ### Результаты измерений
 |Машина      |Время исполнения, мс|
 |------------|--------------------|
-|Виртуальная |30.0 ± 5.7          |
+|Виртуальная |17.1 ± 4.6          |
 |x86-64      |0.20 ± 0.05         |
 
-Таким образом, производительность увеличилась примерно в 150 раз.
+Таким образом, производительность увеличилась примерно в 85,5 раз.
 
 ## Литература
 
 <ul style="list-style-type: none; padding-left: 0;">
   <li><a id="bib1"></a>[1] <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Intel® 64 and IA-32 Architectures Software Developer Manuals</a></li>
   <li><a id="bib2"></a>[2] <a href="https://wiki.osdev.org/X86-64_Instruction_Encoding">x86-64 Instruction encoding</a></li>
-  <li><a id="bib3"></a>[3] <a href="https://www.youtube.com/watch?v=mY9r_qpGa7w&t=10s">Видео про кодирование инструкций</a></li>
-  <li><a id="bib4"></a>[4] <a href="https://man7.org/linux/man-pages/man5/elf.5.html">Про ELF</a></li>
+  <li><a id="bib3"></a>[3] <a href="https://www.youtube.com/watch?v=mY9r_qpGa7w&t=10s">Видео про кодирование инструкций. Автор — Phil Hatcher</a></li>
+  <li><a id="bib4"></a>[4] <a href="https://man7.org/linux/man-pages/man5/elf.5.html">Manual elf.h</a></li>
 </ul>

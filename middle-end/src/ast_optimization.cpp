@@ -7,6 +7,13 @@ static lang_status_t fold_constants(node_t* tree);
 static lang_status_t try_fold_node(node_t* node);
 static lang_status_t calculate_node(node_t* node);
 
+// static lang_status_t solve_trivial_arithmetic(node_t* node);
+// static lang_status_t solve_add(node_t* node);
+// static lang_status_t solve_sub(node_t* node);
+// static lang_status_t solve_mul(node_t* node);
+// static lang_status_t solve_div(node_t* node);
+// static lang_status_t solve_sqrt(node_t* node);
+
 static bool is_number(node_t* node);
 static bool is_math_op(node_t* node);
 
@@ -103,3 +110,93 @@ bool is_math_op(node_t* node)
 }
 
 //——————————————————————————————————————————————————————————————————————————————
+//
+// lang_status_t solve_trivial_arithmetic(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     if (!is_math_op(node)) {
+//         return LANG_ERROR;
+//     }
+//
+//     operator_code_t opc = node->value.operator_code;
+//
+//     switch(opc) {
+//         case ADD:
+//             solve_add(node);
+//             break;
+//         case SUB:
+//             solve_sub(node);
+//             break;
+//         case MUL:
+//             solve_mul(node);
+//             break;
+//         case DIV:
+//             solve_div(node);
+//             break;
+//         case SQRT:
+//             solve_sqrt(node);
+//             break;
+//         default:
+//             return LANG_ERROR;
+//     }
+//
+//     return LANG_SUCCESS;
+// }
+//
+// //——————————————————————————————————————————————————————————————————————————————
+//
+// lang_status_t solve_add(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     bool left_is_zero = is_number(node->left) && node->left->value.number == 0;
+//
+//     if (left_is_zero) {
+//         *node = *node->right;
+//         return LANG_SUCCESS;
+//     }
+//
+//     bool right_is_zero = is_number(node->right) && node->right->value.number == 0;
+//
+//     if (right_is_zero) {
+//         *node = *node->left;
+//         return LANG_SUCCESS;
+//     }
+//
+//     return LANG_SUCCESS;
+// }
+//
+// lang_status_t solve_sub(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     return LANG_SUCCESS;
+// }
+//
+// lang_status_t solve_mul(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     return LANG_SUCCESS;
+// }
+//
+// lang_status_t solve_div(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     return LANG_SUCCESS;
+// }
+//
+// lang_status_t solve_sqrt(node_t* node)
+// {
+//     ASSERT(node);
+//
+//     return LANG_SUCCESS;
+// }
+//
+// //——————————————————————————————————————————————————————————————————————————————
+//
+// lang_status_t solve_if_child_is_zero(node_t* node, node_t* child1, node_)
+//
+// //——————————————————————————————————————————————————————————————————————————————

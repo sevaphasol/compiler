@@ -8,6 +8,7 @@ _start:
 factorial:
         push qword rbp
         mov rbp, rsp
+        sub rsp, 0
         mov rax, [rbp + 16]
         test rax, rax
         je .L0
@@ -23,10 +24,12 @@ factorial:
         pop qword r10
         imul r10, r11
         mov rax, r10
+        add rsp, 0
         pop qword rbp
         ret
 .L0:
         mov rax, 1
+        add rsp, 0
         pop qword rbp
         ret
 main:
@@ -36,10 +39,14 @@ main:
         mov [rbp - 8], 0
         call scan 
         mov [rbp - 8], rax
+        push qword 1000
         push qword [rbp - 8]
         call factorial
         add rsp, 8
-        push qword rax
+        mov r11, rax
+        pop qword r10
+        add r10, r11
+        push qword r10
         call print 
         add rsp, 8
         mov rax, 0
