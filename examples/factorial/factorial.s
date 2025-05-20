@@ -39,14 +39,10 @@ main:
         mov [rbp - 8], 0
         call scan 
         mov [rbp - 8], rax
-        push qword 1000
         push qword [rbp - 8]
         call factorial
         add rsp, 8
-        mov r11, rax
-        pop qword r10
-        add r10, r11
-        push qword r10
+        push qword rax
         call print 
         add rsp, 8
         mov rax, 0

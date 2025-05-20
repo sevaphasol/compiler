@@ -20,5 +20,5 @@ front-end/build/frontend "$SRCFILE" "$TMPFILE_FRONT"
 middle-end/build/middle-end -i "$TMPFILE_FRONT" -o "$TMPFILE_MIDDLE"
 back-end/build/backend -i "$TMPFILE_MIDDLE" -o "$OUTFILE" -S "$ASMFILE"
 
-# rm -f "$TMPFILE_FRONT"
-# rm -f "$TMPFILE_MIDDLE"
+rm -f "$TMPFILE_FRONT"
+rm -f "$TMPFILE_MIDDLE"
