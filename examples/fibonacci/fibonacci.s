@@ -11,9 +11,7 @@ main:
         sub rsp, 32
         mov [rbp - 8], 1
         mov [rbp - 16], 1
-        mov [rbp - 24], 0
-        call scan 
-        mov [rbp - 24], rax
+        mov [rbp - 24], 7
         mov rax, [rbp - 24]
         test rax, rax
         je .L0
