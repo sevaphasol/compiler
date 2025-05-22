@@ -364,14 +364,14 @@ scan:
 ~ func main() {
     ~ var runs    = 1000
     ~ var counter = 5
-    ~ var a = 1
-    ~ var b = 1
+    ~ var a       = 1
+    ~ var b       = 1
 
     ~ while (runs) {
         ~ while (counter) {
             ~ var tmp = b
-            ~ b = a + b
-            ~ a = tmp
+            ~ b       = a + b
+            ~ a       = tmp
 
             ~ counter = counter - 1
         }
